@@ -122,7 +122,7 @@ function sub_menu_activate()
     find_replace_templatesets(
         'headerinclude',
         '#' . preg_quote('{$stylesheets}') . '#i',
-        '{$sub_menu_assets}{$stylesheets}'
+        '{$stylesheets}{$sub_menu_assets}'
     );
 }
 
@@ -161,8 +161,11 @@ function sub_menu_menu_output()
         $json = '{}';
     }
 
-    $script_url = rtrim($mybb->asset_url, '/') . '/jscripts/sub-menu/forum-sub-menu.js';
-    $sub_menu_assets = '<script type="text/javascript">window.subMenuGroups = ' . $json . ';</script>'
+    $asset_url = rtrim($mybb->asset_url, '/');
+    $style_url = $asset_url . '/css/sub-menu.css?ver=100';
+    $script_url = $asset_url . '/jscripts/sub-menu/forum-sub-menu.js?ver=100';
+    $sub_menu_assets = '<link rel="stylesheet" href="' . htmlspecialchars_uni($style_url) . '" />'
+        . '<script type="text/javascript">window.subMenuGroups = ' . $json . ';</script>'
         . '<script type="text/javascript" src="' . htmlspecialchars_uni($script_url) . '"></script>';
 
     $sub_menu = sub_menu_build_sub_menu($group_labels);

@@ -7,6 +7,7 @@ This plugin was extracted from the Sick Gaming Revolution theme plugin so the me
 ## Features
 
 - Per-tab lists of top-level forum category IDs.
+- Bundled responsive styling loaded automatically.
 - Optional show-all tabs with an empty ID list.
 - Enabled/disabled flag for each tab.
 - Remembers the visitor's selected tab in `localStorage`.
@@ -20,6 +21,7 @@ Copy the contents of `Upload/` into the MyBB installation root:
 
 ```text
 Upload/inc/plugins/sub_menu.php -> public_html/inc/plugins/sub_menu.php
+Upload/css/sub-menu.css -> public_html/css/sub-menu.css
 Upload/jscripts/sub-menu/forum-sub-menu.js -> public_html/jscripts/sub-menu/forum-sub-menu.js
 ```
 
@@ -31,7 +33,7 @@ Activation automatically inserts `{$sub_menu_assets}` into `headerinclude` and `
 
 If a customized template does not contain `{$stylesheets}` or `{$forums}`, add the corresponding plugin variable manually. Without the plugin, the normal `{$forums}` output continues to show the complete forum list.
 
-The generated menu uses this structure for theme styling:
+The plugin loads its bundled responsive stylesheet and generates this markup:
 
 ```html
 <div id="forum-sub-menu">
