@@ -17,7 +17,7 @@ function sub_menu_info()
         'website' => 'https://www.sickgaming.net',
         'author' => 'Sick Gaming',
         'authorsite' => 'https://www.sickgaming.net',
-        'version' => '1.0.0',
+        'version' => '1.1.0',
         'compatibility' => '18*'
     );
 }
@@ -85,6 +85,7 @@ function sub_menu_is_installed()
 
 function sub_menu_uninstall()
 {
+    sub_menu_remove_stylesheets();
     global $db;
 
     $query = $db->simple_select('settinggroups', 'gid', "name='" . $db->escape_string('sub_menu') . "'");
@@ -100,6 +101,7 @@ function sub_menu_uninstall()
 function sub_menu_activate()
 {
     sub_menu_ensure_settings();
+    sub_menu_sync_stylesheets();
 
     require_once MYBB_ROOT . 'inc/adminfunctions_templates.php';
 
@@ -128,6 +130,7 @@ function sub_menu_activate()
 
 function sub_menu_deactivate()
 {
+    sub_menu_remove_stylesheets();
     require_once MYBB_ROOT . 'inc/adminfunctions_templates.php';
 
     find_replace_templatesets(
@@ -141,6 +144,187 @@ function sub_menu_deactivate()
         ''
     );
 }
+
+function sub_menu_stylesheet()
+{
+    return <<<'CSS'
+#forum-sub-menu {
+    margin: 20px 0 30px;
+    text-align: center;
+}
+
+.forum-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 18px;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.forum-tabs li {
+    display: inline-block;
+    min-height: 48px;
+    padding: 14px 28px;
+    box-sizing: border-box;
+    border: 1px solid #a0a3f2;
+    border-radius: 6px;
+    background: linear-gradient(180deg, #e3eafc 0%, #a0a3f2 100%);
+    box-shadow: 0 2px 8px rgba(160, 163, 242, 0.12);
+    color: #333;
+    cursor: pointer;
+    font-size: 1.1em;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.forum-tabs li.active {
+    border-color: #a5a7f2;
+    background: linear-gradient(180deg, #a5a7f2 0%, #7c7edc 100%);
+    box-shadow: 0 2px 16px #a5a7f2, 0 2px 8px rgba(165, 167, 242, 0.18);
+    color: #fff;
+}
+
+.forum-tabs li:hover:not(.active) {
+    background: linear-gradient(180deg, #bfc2f7 0%, #a0a3f2 100%);
+    box-shadow: 0 2px 12px rgba(160, 163, 242, 0.18);
+    color: #333;
+}
+CSS;
+}
+
+function sub_menu_load_theme_functions()
+{
+    global $config;
+
+    if (function_exists('cache_stylesheet') && function_exists('update_theme_stylesheet_list')) {
+        return true;
+    }
+
+    $candidates = array();
+
+    if (!empty($_SERVER['SCRIPT_FILENAME'])) {
+        $candidates[] = dirname($_SERVER['SCRIPT_FILENAME']) . '/inc/functions_themes.php';
+    }
+
+    if (!empty($config['admin_dir'])) {
+        $candidates[] = MYBB_ROOT . trim($config['admin_dir'], '/\\') . '/inc/functions_themes.php';
+    }
+
+    $candidates[] = MYBB_ROOT . 'admin/inc/functions_themes.php';
+
+    foreach (array_unique($candidates) as $functions_file) {
+        if (file_exists($functions_file)) {
+            require_once $functions_file;
+            break;
+        }
+    }
+
+    return function_exists('cache_stylesheet') && function_exists('update_theme_stylesheet_list');
+}
+
+function sub_menu_sync_stylesheets()
+{
+    global $db;
+
+    if (!sub_menu_load_theme_functions()) {
+        return false;
+    }
+
+    $name = 'sub_menu_plugin.css';
+    $stylesheet = sub_menu_stylesheet();
+    $theme_ids = array();
+    $query = $db->simple_select('themes', 'tid', 'tid > 1');
+
+    while ($theme = $db->fetch_array($query)) {
+        $tid = (int)$theme['tid'];
+        $theme_ids[] = $tid;
+        $existing_query = $db->simple_select(
+            'themestylesheets',
+            'sid',
+            "tid='{$tid}' AND name='" . $db->escape_string($name) . "'",
+            array('limit' => 1)
+        );
+        $existing = $db->fetch_array($existing_query);
+        $stylesheet_data = array(
+            'name' => $db->escape_string($name),
+            'tid' => $tid,
+            'attachedto' => '',
+            'stylesheet' => $db->escape_string($stylesheet),
+            'cachefile' => $db->escape_string($name),
+            'lastmodified' => TIME_NOW
+        );
+
+        if (!empty($existing['sid'])) {
+            $sid = (int)$existing['sid'];
+            $db->update_query('themestylesheets', $stylesheet_data, "sid='{$sid}'", 1);
+        } else {
+            $sid = (int)$db->insert_query('themestylesheets', $stylesheet_data);
+        }
+
+        if (!cache_stylesheet($tid, $name, $stylesheet)) {
+            $db->update_query(
+                'themestylesheets',
+                array('cachefile' => "css.php?stylesheet={$sid}"),
+                "sid='{$sid}'",
+                1
+            );
+        }
+    }
+
+    foreach ($theme_ids as $tid) {
+        update_theme_stylesheet_list($tid);
+    }
+
+    return true;
+}
+
+function sub_menu_remove_stylesheets()
+{
+    global $db;
+
+    if (!sub_menu_load_theme_functions()) {
+        return false;
+    }
+
+    $name = 'sub_menu_plugin.css';
+    $theme_ids = array();
+    $query = $db->simple_select(
+        'themestylesheets',
+        'sid, tid, cachefile',
+        "name='" . $db->escape_string($name) . "'"
+    );
+
+    while ($stylesheet = $db->fetch_array($query)) {
+        $sid = (int)$stylesheet['sid'];
+        $tid = (int)$stylesheet['tid'];
+        $cachefile = basename($stylesheet['cachefile']);
+        $theme_ids[$tid] = $tid;
+        $db->delete_query('themestylesheets', "sid='{$sid}'", 1);
+
+        if ($cachefile !== '' && strpos($cachefile, 'css.php') === false) {
+            @unlink(MYBB_ROOT . "cache/themes/theme{$tid}/{$cachefile}");
+            @unlink(MYBB_ROOT . 'cache/themes/theme' . $tid . '/' . str_replace('.css', '.min.css', $cachefile));
+            @unlink(MYBB_ROOT . "cache/themes/{$tid}_{$cachefile}");
+            @unlink(MYBB_ROOT . 'cache/themes/' . $tid . '_' . str_replace('.css', '.min.css', $cachefile));
+        }
+    }
+
+    foreach ($theme_ids as $tid) {
+        update_theme_stylesheet_list($tid);
+    }
+
+    return true;
+}
+
+function sub_menu_sync_stylesheets_after_theme_change()
+{
+    sub_menu_sync_stylesheets();
+}
+
+$plugins->add_hook('admin_style_themes_add_commit', 'sub_menu_sync_stylesheets_after_theme_change');
+$plugins->add_hook('admin_style_themes_import_commit', 'sub_menu_sync_stylesheets_after_theme_change');
+$plugins->add_hook('admin_style_themes_duplicate_commit', 'sub_menu_sync_stylesheets_after_theme_change');
 
 $plugins->add_hook('global_start', 'sub_menu_menu_output');
 function sub_menu_menu_output()
@@ -162,10 +346,8 @@ function sub_menu_menu_output()
     }
 
     $asset_url = rtrim($mybb->asset_url, '/');
-    $style_url = $asset_url . '/css/sub-menu.css?ver=100';
-    $script_url = $asset_url . '/jscripts/sub-menu/forum-sub-menu.js?ver=100';
-    $sub_menu_assets = '<link rel="stylesheet" href="' . htmlspecialchars_uni($style_url) . '" />'
-        . '<script type="text/javascript">window.subMenuGroups = ' . $json . ';</script>'
+    $script_url = $asset_url . '/jscripts/sub-menu/forum-sub-menu.js?ver=110';
+    $sub_menu_assets = '<script type="text/javascript">window.subMenuGroups = ' . $json . ';</script>'
         . '<script type="text/javascript" src="' . htmlspecialchars_uni($script_url) . '"></script>';
 
     $sub_menu = sub_menu_build_sub_menu($group_labels);

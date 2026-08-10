@@ -7,7 +7,7 @@ This plugin was extracted from the Sick Gaming Revolution theme plugin so the me
 ## Features
 
 - Per-tab lists of top-level forum category IDs.
-- Bundled responsive styling loaded automatically.
+- Plugin-owned responsive stylesheet installed into every MyBB theme automatically.
 - Optional show-all tabs with an empty ID list.
 - Enabled/disabled flag for each tab.
 - Remembers the visitor's selected tab in `localStorage`.
@@ -21,19 +21,20 @@ Copy the contents of `Upload/` into the MyBB installation root:
 
 ```text
 Upload/inc/plugins/sub_menu.php -> public_html/inc/plugins/sub_menu.php
-Upload/css/sub-menu.css -> public_html/css/sub-menu.css
 Upload/jscripts/sub-menu/forum-sub-menu.js -> public_html/jscripts/sub-menu/forum-sub-menu.js
 ```
 
-Then install and activate `Sub Menu` under Admin CP → Configuration → Plugins.
+Then install and activate `Sub Menu` under Admin CP → Configuration → Plugins. Activation installs `sub_menu_plugin.css` into every existing theme and rebuilds the MyBB stylesheet caches.
+
+When upgrading from version 1.0.0, the old `css/sub-menu.css` file is no longer used and may be deleted after the new version is activated.
 
 ## Theme Integration
 
-Activation automatically inserts `{$sub_menu_assets}` into `headerinclude` and `{$sub_menu}` immediately before `{$forums}` in the `index` template. Deactivation removes both insertions.
+Activation installs and maintains `sub_menu_plugin.css` in every theme, then automatically inserts `{$sub_menu_assets}` into `headerinclude` and `{$sub_menu}` immediately before `{$forums}` in the `index` template. Deactivation removes both insertions and the plugin-owned stylesheet from every theme.
 
 If a customized template does not contain `{$stylesheets}` or `{$forums}`, add the corresponding plugin variable manually. Without the plugin, the normal `{$forums}` output continues to show the complete forum list.
 
-The plugin loads its bundled responsive stylesheet and generates this markup:
+Themes added, imported, or duplicated while the plugin is active receive the stylesheet automatically. The plugin generates this markup:
 
 ```html
 <div id="forum-sub-menu">
@@ -68,4 +69,4 @@ On first installation, the plugin copies the existing `revolution_theme_menu_gro
 
 ## Uninstall
 
-Uninstalling removes the `Sub Menu` setting group and its settings. It does not modify templates or legacy Revolution settings.
+Uninstalling removes the plugin-owned stylesheets, the `Sub Menu` setting group, and its settings. It does not modify templates or legacy Revolution settings.
