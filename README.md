@@ -46,7 +46,7 @@ Themes added, imported, or duplicated while the plugin is active receive the sty
 
 ## Configuration
 
-The plugin creates a `Sub Menu` settings group with a row editor. Use **Add tab** and **Remove** to manage rows. Each row has a unique internal Tab ID (such as `gaming`), the Display name visitors see, comma-separated top-level Forum IDs, and an Enabled checkbox. Leave Forum IDs empty for a show-all tab.
+The plugin creates a `Sub Menu` settings group with a row editor. Use **Add tab** and **Remove** to manage rows. Each row has a unique internal Tab ID (such as `gaming`), the Display name visitors see, comma-separated Forum/Category IDs, and an Enabled checkbox. Leave the IDs empty for a show-all tab.
 
 The editor preserves the original format internally for compatibility:
 
@@ -62,6 +62,10 @@ gaming|Gaming|50,119|1
 programming|Programming|86,55,76|1
 marketplace|MarketPlace|37|1
 ```
+
+### Custom CSS
+
+The **Custom Menu CSS** setting is added after the plugin-owned stylesheet, allowing appearance overrides without editing plugin files. Common selectors include `#forum-sub-menu`, `.forum-tabs li`, `.forum-tabs li.active`, and `.forum-tabs li:hover:not(.active)`.
 
 Keys may contain letters, numbers, underscores, and hyphens. The parser does not impose a fixed group-count limit. Set enabled to `1` or `0`. An empty ID list creates a show-all tab when another enabled group contains IDs. If the setting is empty, disabled, or contains no IDs, the plugin recovers to the initial configuration.
 

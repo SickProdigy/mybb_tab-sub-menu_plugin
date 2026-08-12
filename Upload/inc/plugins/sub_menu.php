@@ -17,7 +17,7 @@ function sub_menu_info()
         'website' => 'https://www.sickgaming.net',
         'author' => 'Sick Gaming',
         'authorsite' => 'https://www.sickgaming.net',
-        'version' => '1.2.0',
+        'version' => '1.3.0',
         'compatibility' => '18*'
     );
 }
@@ -69,10 +69,19 @@ function sub_menu_settings($gid)
         array(
             'name' => 'sub_menu_groups',
             'title' => 'Forum Category Menu Groups',
-            'description' => 'Add one row for each menu tab. The Tab ID is an internal, unique name; the Display name is what visitors see; Forum IDs are the top-level category IDs shown by that tab.',
+            'description' => 'Add one row for each menu tab. The Tab ID is an internal, unique name; the Display name is what visitors see; Forum/Category IDs are the IDs shown by that tab.',
             'optionscode' => 'textarea',
             'value' => sub_menu_initial_setting(),
             'disporder' => 1,
+            'gid' => $gid
+        ),
+        array(
+            'name' => 'sub_menu_custom_css',
+            'title' => 'Custom Menu CSS',
+            'description' => 'Optional CSS added after the plugin stylesheet. Useful selectors: #forum-sub-menu, .forum-tabs li, .forum-tabs li.active, and .forum-tabs li:hover:not(.active).',
+            'optionscode' => 'textarea',
+            'value' => '',
+            'disporder' => 2,
             'gid' => $gid
         )
     );
@@ -338,7 +347,7 @@ function sub_menu_admin_settings_editor()
     global $mybb, $page, $db;
     $query = $db->simple_select('settinggroups', 'gid', "name='sub_menu'", array('limit' => 1));
     if ((int)$mybb->get_input('gid') !== (int)$db->fetch_field($query, 'gid')) { return; }
-    $url = rtrim($mybb->asset_url, '/') . '/jscripts/sub-menu/admin-settings.js?ver=120';
+    $url = rtrim($mybb->asset_url, '/') . '/jscripts/sub-menu/admin-settings.js?ver=130';
     $page->extra_header .= '<script type="text/javascript" src="' . htmlspecialchars_uni($url) . '"></script>';
 }
 
@@ -363,7 +372,15 @@ function sub_menu_menu_output()
 
     $asset_url = rtrim($mybb->asset_url, '/');
     $script_url = $asset_url . '/jscripts/sub-menu/forum-sub-menu.js?ver=110';
-    $sub_menu_assets = '<script type="text/javascript">window.subMenuGroups = ' . $json . ';</script>'
+    $custom_css = isset($mybb->settings['sub_menu_custom_css'])
+        ? trim((string)$mybb->settings['sub_menu_custom_css'])
+        : '';
+    $custom_style = $custom_css !== ''
+        ? '<style type="text/css" id="sub-menu-custom-css">' . str_ireplace('</style', '<\/style', $custom_css) . '</style>'
+        : '';
+
+    $sub_menu_assets = $custom_style
+        . '<script type="text/javascript">window.subMenuGroups = ' . $json . ';</script>'
         . '<script type="text/javascript" src="' . htmlspecialchars_uni($script_url) . '"></script>';
 
     $sub_menu = sub_menu_build_sub_menu($group_labels);
