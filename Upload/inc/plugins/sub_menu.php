@@ -17,7 +17,7 @@ function sub_menu_info()
         'website' => 'https://www.sickgaming.net',
         'author' => 'Sick Gaming',
         'authorsite' => 'https://www.sickgaming.net',
-        'version' => '1.3.0',
+        'version' => '1.3.1',
         'compatibility' => '18*'
     );
 }
@@ -47,7 +47,7 @@ function sub_menu_ensure_settings()
     }
 
     foreach (sub_menu_settings($gid) as $setting) {
-        $query = $db->simple_select('settings', 'sid', "name='" . $db->escape_string($setting['name']) . "'");
+        $query = $db->simple_select('settings', 'sid, value', "name='" . $db->escape_string($setting['name']) . "'");
         $existing = $db->fetch_array($query);
 
         if (empty($existing['sid'])) {
@@ -55,7 +55,11 @@ function sub_menu_ensure_settings()
         } else {
             // Keep the administrator's value, but refresh plugin-owned metadata on upgrade.
             $sid = (int)$existing['sid'];
-            unset($setting['value']);
+            if ($setting['name'] === 'sub_menu_custom_css' && trim((string)$existing['value']) === '') {
+                $setting['value'] = sub_menu_stylesheet();
+            } else {
+                unset($setting['value']);
+            }
             $db->update_query('settings', $setting, "sid='{$sid}'", 1);
         }
     }
@@ -80,7 +84,7 @@ function sub_menu_settings($gid)
             'title' => 'Custom Menu CSS',
             'description' => 'Optional CSS added after the plugin stylesheet. Useful selectors: #forum-sub-menu, .forum-tabs li, .forum-tabs li.active, and .forum-tabs li:hover:not(.active).',
             'optionscode' => 'textarea',
-            'value' => '',
+            'value' => sub_menu_stylesheet(),
             'disporder' => 2,
             'gid' => $gid
         )
@@ -347,7 +351,7 @@ function sub_menu_admin_settings_editor()
     global $mybb, $page, $db;
     $query = $db->simple_select('settinggroups', 'gid', "name='sub_menu'", array('limit' => 1));
     if ((int)$mybb->get_input('gid') !== (int)$db->fetch_field($query, 'gid')) { return; }
-    $url = rtrim($mybb->asset_url, '/') . '/jscripts/sub-menu/admin-settings.js?ver=130';
+    $url = rtrim($mybb->asset_url, '/') . '/jscripts/sub-menu/admin-settings.js?ver=131';
     $page->extra_header .= '<script type="text/javascript" src="' . htmlspecialchars_uni($url) . '"></script>';
 }
 
