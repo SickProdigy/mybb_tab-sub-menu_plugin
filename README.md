@@ -46,7 +46,9 @@ Themes added, imported, or duplicated while the plugin is active receive the sty
 
 ## Configuration
 
-The plugin creates a `Sub Menu` settings group. Enter one tab per line:
+The plugin creates a `Sub Menu` settings group with a row editor. Use **Add tab** and **Remove** to manage rows. Each row has a unique internal Tab ID (such as `gaming`), the Display name visitors see, comma-separated top-level Forum IDs, and an Enabled checkbox. Leave Forum IDs empty for a show-all tab.
+
+The editor preserves the original format internally for compatibility:
 
 ```text
 key|Label|comma-separated forum IDs|enabled

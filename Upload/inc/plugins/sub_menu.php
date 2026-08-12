@@ -17,7 +17,7 @@ function sub_menu_info()
         'website' => 'https://www.sickgaming.net',
         'author' => 'Sick Gaming',
         'authorsite' => 'https://www.sickgaming.net',
-        'version' => '1.1.0',
+        'version' => '1.2.0',
         'compatibility' => '18*'
     );
 }
@@ -52,6 +52,11 @@ function sub_menu_ensure_settings()
 
         if (empty($existing['sid'])) {
             $db->insert_query('settings', $setting);
+        } else {
+            // Keep the administrator's value, but refresh plugin-owned metadata on upgrade.
+            $sid = (int)$existing['sid'];
+            unset($setting['value']);
+            $db->update_query('settings', $setting, "sid='{$sid}'", 1);
         }
     }
 
@@ -64,7 +69,7 @@ function sub_menu_settings($gid)
         array(
             'name' => 'sub_menu_groups',
             'title' => 'Forum Category Menu Groups',
-            'description' => 'One tab per line using key|Label|comma-separated forum IDs|enabled. Example: gaming|Gaming|2,3,4|1',
+            'description' => 'Add one row for each menu tab. The Tab ID is an internal, unique name; the Display name is what visitors see; Forum IDs are the top-level category IDs shown by that tab.',
             'optionscode' => 'textarea',
             'value' => sub_menu_initial_setting(),
             'disporder' => 1,
@@ -325,6 +330,17 @@ function sub_menu_sync_stylesheets_after_theme_change()
 $plugins->add_hook('admin_style_themes_add_commit', 'sub_menu_sync_stylesheets_after_theme_change');
 $plugins->add_hook('admin_style_themes_import_commit', 'sub_menu_sync_stylesheets_after_theme_change');
 $plugins->add_hook('admin_style_themes_duplicate_commit', 'sub_menu_sync_stylesheets_after_theme_change');
+
+$plugins->add_hook('admin_config_settings_change', 'sub_menu_admin_settings_editor');
+
+function sub_menu_admin_settings_editor()
+{
+    global $mybb, $page, $db;
+    $query = $db->simple_select('settinggroups', 'gid', "name='sub_menu'", array('limit' => 1));
+    if ((int)$mybb->get_input('gid') !== (int)$db->fetch_field($query, 'gid')) { return; }
+    $url = rtrim($mybb->asset_url, '/') . '/jscripts/sub-menu/admin-settings.js?ver=120';
+    $page->extra_header .= '<script type="text/javascript" src="' . htmlspecialchars_uni($url) . '"></script>';
+}
 
 $plugins->add_hook('global_start', 'sub_menu_menu_output');
 function sub_menu_menu_output()
