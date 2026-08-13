@@ -19,7 +19,7 @@ Copy the contents of `Upload/` into the MyBB installation root:
 
 ```text
 Upload/inc/plugins/tab_sub_menu.php -> public_html/inc/plugins/tab_sub_menu.php
-Upload/jscripts/tab-sub-menu/forum-tab-sub-menu.js -> public_html/jscripts/tab-sub-menu/forum-tab-sub-menu.js
+Upload/jscripts/tab-sub-menu/tab-sub-menu.js -> public_html/jscripts/tab-sub-menu/tab-sub-menu.js
 ```
 
 Then install and activate `Tab Sub Menu` under Admin CP → Configuration → Plugins. Activation installs `tab_sub_menu_plugin.css` into every existing theme and rebuilds the MyBB stylesheet caches.

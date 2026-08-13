@@ -17,7 +17,7 @@ function tab_sub_menu_info()
         'website' => 'https://www.sickgaming.net',
         'author' => 'Sick Gaming',
         'authorsite' => 'https://www.sickgaming.net',
-        'version' => '0.4.1',
+        'version' => '0.4.2',
         'compatibility' => '18*'
     );
 }
@@ -351,7 +351,7 @@ function tab_sub_menu_admin_settings_editor()
     global $mybb, $page, $db;
     $query = $db->simple_select('settinggroups', 'gid', "name='tab_sub_menu'", array('limit' => 1));
     if ((int)$mybb->get_input('gid') !== (int)$db->fetch_field($query, 'gid')) { return; }
-    $url = rtrim($mybb->asset_url, '/') . '/jscripts/tab-sub-menu/admin-settings.js?ver=041';
+    $url = rtrim($mybb->asset_url, '/') . '/jscripts/tab-sub-menu/tab-sub-menu-admin-settings.js?ver=042';
     $page->extra_header .= '<script type="text/javascript" src="' . htmlspecialchars_uni($url) . '"></script>';
 }
 
@@ -375,7 +375,7 @@ function tab_sub_menu_menu_output()
     }
 
     $asset_url = rtrim($mybb->asset_url, '/');
-    $script_url = $asset_url . '/jscripts/tab-sub-menu/forum-tab-sub-menu.js?ver=041';
+    $script_url = $asset_url . '/jscripts/tab-sub-menu/tab-sub-menu.js?ver=042';
     $custom_css = isset($mybb->settings['tab_sub_menu_custom_css'])
         ? trim((string)$mybb->settings['tab_sub_menu_custom_css'])
         : '';
