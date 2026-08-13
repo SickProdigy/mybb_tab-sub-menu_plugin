@@ -2,8 +2,8 @@
 // Configurable forum category filtering for MyBB
 
 function getCategoryGroups() {
-  return window.subMenuGroups && typeof window.subMenuGroups === 'object' && Object.keys(window.subMenuGroups).length > 0
-    ? window.subMenuGroups
+  return window.tabSubMenuGroups && typeof window.tabSubMenuGroups === 'object' && Object.keys(window.tabSubMenuGroups).length > 0
+    ? window.tabSubMenuGroups
     : null;
 }
 
@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', function() {
       this.classList.add('active');
       let selected = this.getAttribute('data-tab');
       // Store selected tab in localStorage
-      try { localStorage.setItem('subMenuTab', selected); } catch(e) {}
+      try { localStorage.setItem('tabSubMenuTab', selected); } catch(e) {}
       let ids = categoryGroups[selected] || [];
       let showAll = ids.length === 0;
       // Hide all categories and their following <br>
@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', function() {
   });
   // Auto-select the last tab, then Home, then the first configured tab
   let lastTab = null;
-  try { lastTab = localStorage.getItem('subMenuTab'); } catch(e) {}
+  try { lastTab = localStorage.getItem('tabSubMenuTab'); } catch(e) {}
   let tabToSelect = lastTab ? document.querySelector('.forum-tabs li[data-tab="' + lastTab + '"]') : null;
   if(tabToSelect) {
     tabToSelect.click();

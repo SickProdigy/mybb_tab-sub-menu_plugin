@@ -1,7 +1,7 @@
 (function () {
 'use strict';
 document.addEventListener('DOMContentLoaded', function () {
-  var source = document.getElementById('setting_sub_menu_groups');
+  var source = document.getElementById('setting_tab_sub_menu_groups');
   if (!source) return;
   var style = document.createElement('style');
   style.textContent = '.sm-help{margin:6px 0 12px;color:#666}.sm-head,.sm-row{display:grid;grid-template-columns:minmax(110px,.8fr) minmax(150px,1fr) minmax(190px,1.5fr) 75px 75px;gap:8px;align-items:center}.sm-head{font-weight:bold;margin-bottom:5px}.sm-row{margin-bottom:8px}.sm-row label>span{display:none}.sm-row input[type=text]{box-sizing:border-box;width:100%}.sm-enabled{text-align:center}@media(max-width:760px){.sm-head{display:none}.sm-row{display:block;padding:10px;border:1px solid #ccc}.sm-row label{display:block;margin-bottom:8px}.sm-row label>span{display:block;font-weight:bold}.sm-enabled{text-align:left}}';

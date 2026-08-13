@@ -1,52 +1,52 @@
 <?php
 /**
- * Sub Menu
+ * Tab Sub Menu
  *
- * MyBB plugin for Sick Gaming's configurable forum category submenu output and assets.
+ * MyBB plugin for Sick Gaming's configurable forum category tab menu output and assets.
  */
 
 if (!defined('IN_MYBB')) {
     die('Direct initialization of this file is not allowed.');
 }
 
-function sub_menu_info()
+function tab_sub_menu_info()
 {
     return array(
-        'name' => 'Sub Menu',
+        'name' => 'Tab Sub Menu',
         'description' => 'Provides configurable forum category tabs and filtering for MyBB.',
         'website' => 'https://www.sickgaming.net',
         'author' => 'Sick Gaming',
         'authorsite' => 'https://www.sickgaming.net',
-        'version' => '1.3.1',
+        'version' => '0.4.0',
         'compatibility' => '18*'
     );
 }
 
-function sub_menu_install()
+function tab_sub_menu_install()
 {
-    sub_menu_ensure_settings();
+    tab_sub_menu_ensure_settings();
 }
 
-function sub_menu_ensure_settings()
+function tab_sub_menu_ensure_settings()
 {
     global $db;
 
-    $query = $db->simple_select('settinggroups', 'gid', "name='" . $db->escape_string('sub_menu') . "'");
+    $query = $db->simple_select('settinggroups', 'gid', "name='" . $db->escape_string('tab_sub_menu') . "'");
     $group = $db->fetch_array($query);
 
     if (!empty($group['gid'])) {
         $gid = (int)$group['gid'];
     } else {
         $gid = (int)$db->insert_query('settinggroups', array(
-            'name' => 'sub_menu',
-            'title' => 'Sub Menu',
-            'description' => 'Settings for the Sub Menu forum menu.',
+            'name' => 'tab_sub_menu',
+            'title' => 'Tab Sub Menu',
+            'description' => 'Settings for the Tab Sub Menu forum menu.',
             'disporder' => 1,
             'isdefault' => 0
         ));
     }
 
-    foreach (sub_menu_settings($gid) as $setting) {
+    foreach (tab_sub_menu_settings($gid) as $setting) {
         $query = $db->simple_select('settings', 'sid, value', "name='" . $db->escape_string($setting['name']) . "'");
         $existing = $db->fetch_array($query);
 
@@ -55,8 +55,8 @@ function sub_menu_ensure_settings()
         } else {
             // Keep the administrator's value, but refresh plugin-owned metadata on upgrade.
             $sid = (int)$existing['sid'];
-            if ($setting['name'] === 'sub_menu_custom_css' && trim((string)$existing['value']) === '') {
-                $setting['value'] = sub_menu_stylesheet();
+            if ($setting['name'] === 'tab_sub_menu_custom_css' && trim((string)$existing['value']) === '') {
+                $setting['value'] = tab_sub_menu_stylesheet();
             } else {
                 unset($setting['value']);
             }
@@ -64,109 +64,109 @@ function sub_menu_ensure_settings()
         }
     }
 
-    sub_menu_rebuild_settings();
+    tab_sub_menu_rebuild_settings();
 }
 
-function sub_menu_settings($gid)
+function tab_sub_menu_settings($gid)
 {
     return array(
         array(
-            'name' => 'sub_menu_groups',
+            'name' => 'tab_sub_menu_groups',
             'title' => 'Forum Category Menu Groups',
             'description' => 'Add one row for each menu tab. The Tab ID is an internal, unique name; the Display name is what visitors see; Forum/Category IDs are the IDs shown by that tab.',
             'optionscode' => 'textarea',
-            'value' => sub_menu_initial_setting(),
+            'value' => tab_sub_menu_initial_setting(),
             'disporder' => 1,
             'gid' => $gid
         ),
         array(
-            'name' => 'sub_menu_custom_css',
+            'name' => 'tab_sub_menu_custom_css',
             'title' => 'Custom Menu CSS',
-            'description' => 'Optional CSS added after the plugin stylesheet. Useful selectors: #forum-sub-menu, .forum-tabs li, .forum-tabs li.active, and .forum-tabs li:hover:not(.active).',
+            'description' => 'Optional CSS added after the plugin stylesheet. Useful selectors: #forum-tab-sub-menu, .forum-tabs li, .forum-tabs li.active, and .forum-tabs li:hover:not(.active).',
             'optionscode' => 'textarea',
-            'value' => sub_menu_stylesheet(),
+            'value' => tab_sub_menu_stylesheet(),
             'disporder' => 2,
             'gid' => $gid
         )
     );
 }
 
-function sub_menu_is_installed()
+function tab_sub_menu_is_installed()
 {
     global $db;
 
-    $query = $db->simple_select('settinggroups', 'gid', "name='" . $db->escape_string('sub_menu') . "'");
+    $query = $db->simple_select('settinggroups', 'gid', "name='" . $db->escape_string('tab_sub_menu') . "'");
     $group = $db->fetch_array($query);
 
     return !empty($group['gid']);
 }
 
-function sub_menu_uninstall()
+function tab_sub_menu_uninstall()
 {
-    sub_menu_remove_stylesheets();
+    tab_sub_menu_remove_stylesheets();
     global $db;
 
-    $query = $db->simple_select('settinggroups', 'gid', "name='" . $db->escape_string('sub_menu') . "'");
+    $query = $db->simple_select('settinggroups', 'gid', "name='" . $db->escape_string('tab_sub_menu') . "'");
     $group = $db->fetch_array($query);
     if (!empty($group['gid'])) {
         $gid = (int)$group['gid'];
         $db->delete_query('settinggroups', "gid='{$gid}'");
         $db->delete_query('settings', "gid='{$gid}'");
-        sub_menu_rebuild_settings();
+        tab_sub_menu_rebuild_settings();
     }
 }
 
-function sub_menu_activate()
+function tab_sub_menu_activate()
 {
-    sub_menu_ensure_settings();
-    sub_menu_sync_stylesheets();
+    tab_sub_menu_ensure_settings();
+    tab_sub_menu_sync_stylesheets();
 
     require_once MYBB_ROOT . 'inc/adminfunctions_templates.php';
 
     find_replace_templatesets(
         'index',
-        '#' . preg_quote('{$sub_menu}') . '#i',
+        '#' . preg_quote('{$tab_sub_menu}') . '#i',
         ''
     );
     find_replace_templatesets(
         'index',
         '#' . preg_quote('{$forums}') . '#i',
-        '{$sub_menu}{$forums}'
+        '{$tab_sub_menu}{$forums}'
     );
 
     find_replace_templatesets(
         'headerinclude',
-        '#' . preg_quote('{$sub_menu_assets}') . '#i',
+        '#' . preg_quote('{$tab_sub_menu_assets}') . '#i',
         ''
     );
     find_replace_templatesets(
         'headerinclude',
         '#' . preg_quote('{$stylesheets}') . '#i',
-        '{$stylesheets}{$sub_menu_assets}'
+        '{$stylesheets}{$tab_sub_menu_assets}'
     );
 }
 
-function sub_menu_deactivate()
+function tab_sub_menu_deactivate()
 {
-    sub_menu_remove_stylesheets();
+    tab_sub_menu_remove_stylesheets();
     require_once MYBB_ROOT . 'inc/adminfunctions_templates.php';
 
     find_replace_templatesets(
         'index',
-        '#' . preg_quote('{$sub_menu}') . '#i',
+        '#' . preg_quote('{$tab_sub_menu}') . '#i',
         ''
     );
     find_replace_templatesets(
         'headerinclude',
-        '#' . preg_quote('{$sub_menu_assets}') . '#i',
+        '#' . preg_quote('{$tab_sub_menu_assets}') . '#i',
         ''
     );
 }
 
-function sub_menu_stylesheet()
+function tab_sub_menu_stylesheet()
 {
     return <<<'CSS'
-#forum-sub-menu {
+#forum-tab-sub-menu {
     margin: 20px 0 30px;
     text-align: center;
 }
@@ -211,7 +211,7 @@ function sub_menu_stylesheet()
 CSS;
 }
 
-function sub_menu_load_theme_functions()
+function tab_sub_menu_load_theme_functions()
 {
     global $config;
 
@@ -241,16 +241,16 @@ function sub_menu_load_theme_functions()
     return function_exists('cache_stylesheet') && function_exists('update_theme_stylesheet_list');
 }
 
-function sub_menu_sync_stylesheets()
+function tab_sub_menu_sync_stylesheets()
 {
     global $db;
 
-    if (!sub_menu_load_theme_functions()) {
+    if (!tab_sub_menu_load_theme_functions()) {
         return false;
     }
 
-    $name = 'sub_menu_plugin.css';
-    $stylesheet = sub_menu_stylesheet();
+    $name = 'tab_sub_menu_plugin.css';
+    $stylesheet = tab_sub_menu_stylesheet();
     $theme_ids = array();
     $query = $db->simple_select('themes', 'tid', 'tid > 1');
 
@@ -297,15 +297,15 @@ function sub_menu_sync_stylesheets()
     return true;
 }
 
-function sub_menu_remove_stylesheets()
+function tab_sub_menu_remove_stylesheets()
 {
     global $db;
 
-    if (!sub_menu_load_theme_functions()) {
+    if (!tab_sub_menu_load_theme_functions()) {
         return false;
     }
 
-    $name = 'sub_menu_plugin.css';
+    $name = 'tab_sub_menu_plugin.css';
     $theme_ids = array();
     $query = $db->simple_select(
         'themestylesheets',
@@ -335,32 +335,32 @@ function sub_menu_remove_stylesheets()
     return true;
 }
 
-function sub_menu_sync_stylesheets_after_theme_change()
+function tab_sub_menu_sync_stylesheets_after_theme_change()
 {
-    sub_menu_sync_stylesheets();
+    tab_sub_menu_sync_stylesheets();
 }
 
-$plugins->add_hook('admin_style_themes_add_commit', 'sub_menu_sync_stylesheets_after_theme_change');
-$plugins->add_hook('admin_style_themes_import_commit', 'sub_menu_sync_stylesheets_after_theme_change');
-$plugins->add_hook('admin_style_themes_duplicate_commit', 'sub_menu_sync_stylesheets_after_theme_change');
+$plugins->add_hook('admin_style_themes_add_commit', 'tab_sub_menu_sync_stylesheets_after_theme_change');
+$plugins->add_hook('admin_style_themes_import_commit', 'tab_sub_menu_sync_stylesheets_after_theme_change');
+$plugins->add_hook('admin_style_themes_duplicate_commit', 'tab_sub_menu_sync_stylesheets_after_theme_change');
 
-$plugins->add_hook('admin_config_settings_change', 'sub_menu_admin_settings_editor');
+$plugins->add_hook('admin_config_settings_change', 'tab_sub_menu_admin_settings_editor');
 
-function sub_menu_admin_settings_editor()
+function tab_sub_menu_admin_settings_editor()
 {
     global $mybb, $page, $db;
-    $query = $db->simple_select('settinggroups', 'gid', "name='sub_menu'", array('limit' => 1));
+    $query = $db->simple_select('settinggroups', 'gid', "name='tab_sub_menu'", array('limit' => 1));
     if ((int)$mybb->get_input('gid') !== (int)$db->fetch_field($query, 'gid')) { return; }
-    $url = rtrim($mybb->asset_url, '/') . '/jscripts/sub-menu/admin-settings.js?ver=131';
+    $url = rtrim($mybb->asset_url, '/') . '/jscripts/tab-sub-menu/admin-settings.js?ver=040';
     $page->extra_header .= '<script type="text/javascript" src="' . htmlspecialchars_uni($url) . '"></script>';
 }
 
-$plugins->add_hook('global_start', 'sub_menu_menu_output');
-function sub_menu_menu_output()
+$plugins->add_hook('global_start', 'tab_sub_menu_menu_output');
+function tab_sub_menu_menu_output()
 {
-    global $mybb, $sub_menu_assets, $sub_menu;
+    global $mybb, $tab_sub_menu_assets, $tab_sub_menu;
 
-    $groups = sub_menu_get_menu_groups();
+    $groups = tab_sub_menu_get_menu_groups();
     $group_ids = array();
     $group_labels = array();
 
@@ -375,30 +375,30 @@ function sub_menu_menu_output()
     }
 
     $asset_url = rtrim($mybb->asset_url, '/');
-    $script_url = $asset_url . '/jscripts/sub-menu/forum-sub-menu.js?ver=110';
-    $custom_css = isset($mybb->settings['sub_menu_custom_css'])
-        ? trim((string)$mybb->settings['sub_menu_custom_css'])
+    $script_url = $asset_url . '/jscripts/tab-sub-menu/forum-tab-sub-menu.js?ver=040';
+    $custom_css = isset($mybb->settings['tab_sub_menu_custom_css'])
+        ? trim((string)$mybb->settings['tab_sub_menu_custom_css'])
         : '';
     $custom_style = $custom_css !== ''
-        ? '<style type="text/css" id="sub-menu-custom-css">' . str_ireplace('</style', '<\/style', $custom_css) . '</style>'
+        ? '<style type="text/css" id="tab-sub-menu-custom-css">' . str_ireplace('</style', '<\/style', $custom_css) . '</style>'
         : '';
 
-    $sub_menu_assets = $custom_style
-        . '<script type="text/javascript">window.subMenuGroups = ' . $json . ';</script>'
+    $tab_sub_menu_assets = $custom_style
+        . '<script type="text/javascript">window.tabSubMenuGroups = ' . $json . ';</script>'
         . '<script type="text/javascript" src="' . htmlspecialchars_uni($script_url) . '"></script>';
 
-    $sub_menu = sub_menu_build_sub_menu($group_labels);
+    $tab_sub_menu = tab_sub_menu_build_tab_sub_menu($group_labels);
 }
 
-function sub_menu_get_menu_groups()
+function tab_sub_menu_get_menu_groups()
 {
     global $mybb;
 
-    $setting = isset($mybb->settings['sub_menu_groups'])
-        ? $mybb->settings['sub_menu_groups']
+    $setting = isset($mybb->settings['tab_sub_menu_groups'])
+        ? $mybb->settings['tab_sub_menu_groups']
         : '';
 
-    $groups = sub_menu_parse_menu_groups($setting);
+    $groups = tab_sub_menu_parse_menu_groups($setting);
 
     $has_forum_ids = false;
 
@@ -410,13 +410,13 @@ function sub_menu_get_menu_groups()
     }
 
     if (empty($groups) || !$has_forum_ids) {
-        $groups = sub_menu_default_menu_groups();
+        $groups = tab_sub_menu_default_menu_groups();
     }
 
     return $groups;
 }
 
-function sub_menu_parse_menu_groups($value)
+function tab_sub_menu_parse_menu_groups($value)
 {
     $groups = array();
     $lines = preg_split('/\r\n|\r|\n/', trim((string)$value));
@@ -440,14 +440,14 @@ function sub_menu_parse_menu_groups($value)
         $groups[] = array(
             'key' => $key,
             'label' => $label,
-            'forum_ids' => sub_menu_parse_forum_ids(isset($parts[2]) ? $parts[2] : '')
+            'forum_ids' => tab_sub_menu_parse_forum_ids(isset($parts[2]) ? $parts[2] : '')
         );
     }
 
     return $groups;
 }
 
-function sub_menu_parse_forum_ids($value)
+function tab_sub_menu_parse_forum_ids($value)
 {
     $forum_ids = array();
 
@@ -462,7 +462,7 @@ function sub_menu_parse_forum_ids($value)
     return $forum_ids;
 }
 
-function sub_menu_default_menu_groups()
+function tab_sub_menu_default_menu_groups()
 {
     return array(
         array('key' => 'home', 'label' => 'Home', 'forum_ids' => array(115, 1, 58, 99)),
@@ -472,7 +472,7 @@ function sub_menu_default_menu_groups()
     );
 }
 
-function sub_menu_initial_setting()
+function tab_sub_menu_initial_setting()
 {
     global $db;
 
@@ -483,14 +483,14 @@ function sub_menu_initial_setting()
         return $legacy['value'];
     }
 
-    return sub_menu_default_menu_setting();
+    return tab_sub_menu_default_menu_setting();
 }
 
-function sub_menu_default_menu_setting()
+function tab_sub_menu_default_menu_setting()
 {
     $lines = array();
 
-    foreach (sub_menu_default_menu_groups() as $group) {
+    foreach (tab_sub_menu_default_menu_groups() as $group) {
         $forum_ids = implode(',', $group['forum_ids']);
         $lines[] = $group['key'] . '|' . $group['label'] . '|' . $forum_ids . '|1';
     }
@@ -498,9 +498,9 @@ function sub_menu_default_menu_setting()
     return implode("\n", $lines);
 }
 
-function sub_menu_build_sub_menu($groups)
+function tab_sub_menu_build_tab_sub_menu($groups)
 {
-    $html = '<div id="forum-sub-menu"><ul class="forum-tabs">';
+    $html = '<div id="forum-tab-sub-menu"><ul class="forum-tabs">';
     $first = true;
 
     foreach ($groups as $key => $label) {
@@ -514,7 +514,7 @@ function sub_menu_build_sub_menu($groups)
     return $html;
 }
 
-function sub_menu_rebuild_settings()
+function tab_sub_menu_rebuild_settings()
 {
     if (!function_exists('rebuild_settings')) {
         require_once MYBB_ROOT . 'inc/functions.php';
