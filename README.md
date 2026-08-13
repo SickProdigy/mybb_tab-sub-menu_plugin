@@ -2,7 +2,7 @@
 
 Standalone configurable forum-category tab menu for MyBB 1.8.
 
-This plugin was extracted from the Sick Gaming Revolution theme plugin so the menu can be installed and maintained independently of a specific theme.
+The plugin can be installed and maintained independently of any MyBB theme.
 
 ## Features
 
@@ -12,8 +12,6 @@ This plugin was extracted from the Sick Gaming Revolution theme plugin so the me
 - Enabled/disabled flag for each tab.
 - Remembers the visitor's selected tab in `localStorage`.
 - Falls back to Home or the first configured tab.
-- Original Sick Gaming category mapping as the initial recovery configuration.
-- Imports the legacy `revolution_theme_menu_groups` value on first installation when available.
 
 ## Install
 
@@ -55,10 +53,7 @@ key|Label|comma-separated forum IDs|enabled
 Initial configuration:
 
 ```text
-home|Home|115,1,58,99|1
-gaming|Gaming|50,119|1
-programming|Programming|86,55,76|1
-marketplace|MarketPlace|37|1
+home|Home||1
 ```
 
 ### Custom CSS
@@ -67,10 +62,6 @@ The **Custom Menu CSS** setting starts with the plugin's complete default styles
 
 Keys may contain letters, numbers, underscores, and hyphens. The parser does not impose a fixed group-count limit. Set enabled to `1` or `0`. An empty ID list creates a show-all tab when another enabled group contains IDs. If the setting is empty, disabled, or contains no IDs, the plugin recovers to the initial configuration.
 
-## Migration
-
-On first installation, the plugin copies the existing `revolution_theme_menu_groups` value when present. It does not delete the legacy Revolution setting automatically.
-
 ## Uninstall
 
-Uninstalling removes the plugin-owned stylesheets, the `Tab Sub Menu` setting group, and its settings. It does not modify templates or legacy Revolution settings.
+Uninstalling removes the plugin-owned stylesheets, the `Tab Sub Menu` setting group, and its settings. It does not modify unrelated templates or settings.

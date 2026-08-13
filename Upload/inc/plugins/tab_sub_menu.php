@@ -2,7 +2,7 @@
 /**
  * Tab Sub Menu
  *
- * MyBB plugin for Sick Gaming's configurable forum category tab menu output and assets.
+ * MyBB plugin for organizing forum categories into configurable tabs.
  */
 
 if (!defined('IN_MYBB')) {
@@ -13,11 +13,11 @@ function tab_sub_menu_info()
 {
     return array(
         'name' => 'Tab Sub Menu',
-        'description' => 'Provides configurable forum category tabs and filtering for MyBB.',
+        'description' => 'Organizes forum categories into configurable tabs for easier navigation.',
         'website' => 'https://www.sickgaming.net',
         'author' => 'Sick Gaming',
         'authorsite' => 'https://www.sickgaming.net',
-        'version' => '0.4.0',
+        'version' => '0.4.1',
         'compatibility' => '18*'
     );
 }
@@ -351,7 +351,7 @@ function tab_sub_menu_admin_settings_editor()
     global $mybb, $page, $db;
     $query = $db->simple_select('settinggroups', 'gid', "name='tab_sub_menu'", array('limit' => 1));
     if ((int)$mybb->get_input('gid') !== (int)$db->fetch_field($query, 'gid')) { return; }
-    $url = rtrim($mybb->asset_url, '/') . '/jscripts/tab-sub-menu/admin-settings.js?ver=040';
+    $url = rtrim($mybb->asset_url, '/') . '/jscripts/tab-sub-menu/admin-settings.js?ver=041';
     $page->extra_header .= '<script type="text/javascript" src="' . htmlspecialchars_uni($url) . '"></script>';
 }
 
@@ -375,7 +375,7 @@ function tab_sub_menu_menu_output()
     }
 
     $asset_url = rtrim($mybb->asset_url, '/');
-    $script_url = $asset_url . '/jscripts/tab-sub-menu/forum-tab-sub-menu.js?ver=040';
+    $script_url = $asset_url . '/jscripts/tab-sub-menu/forum-tab-sub-menu.js?ver=041';
     $custom_css = isset($mybb->settings['tab_sub_menu_custom_css'])
         ? trim((string)$mybb->settings['tab_sub_menu_custom_css'])
         : '';
@@ -465,24 +465,12 @@ function tab_sub_menu_parse_forum_ids($value)
 function tab_sub_menu_default_menu_groups()
 {
     return array(
-        array('key' => 'home', 'label' => 'Home', 'forum_ids' => array(115, 1, 58, 99)),
-        array('key' => 'gaming', 'label' => 'Gaming', 'forum_ids' => array(50, 119)),
-        array('key' => 'programming', 'label' => 'Programming', 'forum_ids' => array(86, 55, 76)),
-        array('key' => 'marketplace', 'label' => 'MarketPlace', 'forum_ids' => array(37))
+        array('key' => 'home', 'label' => 'Home', 'forum_ids' => array())
     );
 }
 
 function tab_sub_menu_initial_setting()
 {
-    global $db;
-
-    $query = $db->simple_select('settings', 'value', "name='revolution_theme_menu_groups'");
-    $legacy = $db->fetch_array($query);
-
-    if (!empty($legacy['value'])) {
-        return $legacy['value'];
-    }
-
     return tab_sub_menu_default_menu_setting();
 }
 
