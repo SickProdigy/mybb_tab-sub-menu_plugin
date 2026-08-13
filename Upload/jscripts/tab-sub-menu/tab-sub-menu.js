@@ -11,17 +11,17 @@ document.addEventListener('DOMContentLoaded', function() {
   const categoryGroups = getCategoryGroups();
   if (!categoryGroups) {
     // No config: show all forums, tabs only highlight
-    document.querySelectorAll('.forum-tabs li').forEach(tab => {
+    document.querySelectorAll('.tab-sub-menu li').forEach(tab => {
       tab.addEventListener('click', function() {
-        document.querySelectorAll('.forum-tabs li').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-sub-menu li').forEach(t => t.classList.remove('active'));
         this.classList.add('active');
       });
     });
     return;
   }
-  document.querySelectorAll('.forum-tabs li').forEach(tab => {
+  document.querySelectorAll('.tab-sub-menu li').forEach(tab => {
     tab.addEventListener('click', function() {
-      document.querySelectorAll('.forum-tabs li').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-sub-menu li').forEach(t => t.classList.remove('active'));
       this.classList.add('active');
       let selected = this.getAttribute('data-tab');
       // Store selected tab in localStorage
@@ -49,11 +49,11 @@ document.addEventListener('DOMContentLoaded', function() {
   // Auto-select the last tab, then Home, then the first configured tab
   let lastTab = null;
   try { lastTab = localStorage.getItem('tabSubMenuTab'); } catch(e) {}
-  let tabToSelect = lastTab ? document.querySelector('.forum-tabs li[data-tab="' + lastTab + '"]') : null;
+  let tabToSelect = lastTab ? document.querySelector('.tab-sub-menu li[data-tab="' + lastTab + '"]') : null;
   if(tabToSelect) {
     tabToSelect.click();
   } else {
-    const defaultTab = document.querySelector('.forum-tabs li[data-tab="home"]') || document.querySelector('.forum-tabs li');
+    const defaultTab = document.querySelector('.tab-sub-menu li[data-tab="home"]') || document.querySelector('.tab-sub-menu li');
     if(defaultTab) defaultTab.click();
   }
 });

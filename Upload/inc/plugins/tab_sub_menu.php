@@ -17,7 +17,7 @@ function tab_sub_menu_info()
         'website' => 'https://www.sickgaming.net',
         'author' => 'Sick Gaming',
         'authorsite' => 'https://www.sickgaming.net',
-        'version' => '0.4.2',
+        'version' => '0.4.3',
         'compatibility' => '18*'
     );
 }
@@ -82,7 +82,7 @@ function tab_sub_menu_settings($gid)
         array(
             'name' => 'tab_sub_menu_custom_css',
             'title' => 'Custom Menu CSS',
-            'description' => 'Optional CSS added after the plugin stylesheet. Useful selectors: #forum-tab-sub-menu, .forum-tabs li, .forum-tabs li.active, and .forum-tabs li:hover:not(.active).',
+            'description' => 'Optional CSS added after the plugin stylesheet. Useful selectors: #forum-tab-sub-menu, .tab-sub-menu li, .tab-sub-menu li.active, and .tab-sub-menu li:hover:not(.active).',
             'optionscode' => 'textarea',
             'value' => tab_sub_menu_stylesheet(),
             'disporder' => 2,
@@ -171,7 +171,7 @@ function tab_sub_menu_stylesheet()
     text-align: center;
 }
 
-.forum-tabs {
+.tab-sub-menu {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
@@ -181,7 +181,7 @@ function tab_sub_menu_stylesheet()
     list-style: none;
 }
 
-.forum-tabs li {
+.tab-sub-menu li {
     display: inline-block;
     min-height: 48px;
     padding: 14px 28px;
@@ -196,14 +196,14 @@ function tab_sub_menu_stylesheet()
     transition: background 0.2s, color 0.2s, box-shadow 0.2s;
 }
 
-.forum-tabs li.active {
+.tab-sub-menu li.active {
     border-color: #a5a7f2;
     background: linear-gradient(180deg, #a5a7f2 0%, #7c7edc 100%);
     box-shadow: 0 2px 16px #a5a7f2, 0 2px 8px rgba(165, 167, 242, 0.18);
     color: #fff;
 }
 
-.forum-tabs li:hover:not(.active) {
+.tab-sub-menu li:hover:not(.active) {
     background: linear-gradient(180deg, #bfc2f7 0%, #a0a3f2 100%);
     box-shadow: 0 2px 12px rgba(160, 163, 242, 0.18);
     color: #333;
@@ -351,7 +351,7 @@ function tab_sub_menu_admin_settings_editor()
     global $mybb, $page, $db;
     $query = $db->simple_select('settinggroups', 'gid', "name='tab_sub_menu'", array('limit' => 1));
     if ((int)$mybb->get_input('gid') !== (int)$db->fetch_field($query, 'gid')) { return; }
-    $url = rtrim($mybb->asset_url, '/') . '/jscripts/tab-sub-menu/tab-sub-menu-admin-settings.js?ver=042';
+    $url = rtrim($mybb->asset_url, '/') . '/jscripts/tab-sub-menu/tab-sub-menu-admin-settings.js?ver=043';
     $page->extra_header .= '<script type="text/javascript" src="' . htmlspecialchars_uni($url) . '"></script>';
 }
 
@@ -375,7 +375,7 @@ function tab_sub_menu_menu_output()
     }
 
     $asset_url = rtrim($mybb->asset_url, '/');
-    $script_url = $asset_url . '/jscripts/tab-sub-menu/tab-sub-menu.js?ver=042';
+    $script_url = $asset_url . '/jscripts/tab-sub-menu/tab-sub-menu.js?ver=043';
     $custom_css = isset($mybb->settings['tab_sub_menu_custom_css'])
         ? trim((string)$mybb->settings['tab_sub_menu_custom_css'])
         : '';
@@ -488,7 +488,7 @@ function tab_sub_menu_default_menu_setting()
 
 function tab_sub_menu_build_tab_sub_menu($groups)
 {
-    $html = '<div id="forum-tab-sub-menu"><ul class="forum-tabs">';
+    $html = '<div id="forum-tab-sub-menu"><ul class="tab-sub-menu">';
     $first = true;
 
     foreach ($groups as $key => $label) {

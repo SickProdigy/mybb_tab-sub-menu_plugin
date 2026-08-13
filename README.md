@@ -34,7 +34,7 @@ Themes added, imported, or duplicated while the plugin is active receive the sty
 
 ```html
 <div id="forum-tab-sub-menu">
-    <ul class="forum-tabs">
+    <ul class="tab-sub-menu">
         <li data-tab="home" class="active">Home</li>
     </ul>
 </div>
@@ -58,7 +58,7 @@ home|Home||1
 
 ### Custom CSS
 
-The **Custom Menu CSS** setting starts with the plugin's complete default stylesheet and is added after the plugin-owned stylesheet, allowing appearance overrides without editing plugin files. Common selectors include `#forum-tab-sub-menu`, `.forum-tabs li`, `.forum-tabs li.active`, and `.forum-tabs li:hover:not(.active)`.
+The **Custom Menu CSS** setting starts with the plugin's complete default stylesheet and is added after the plugin-owned stylesheet, allowing appearance overrides without editing plugin files. Common selectors include `#forum-tab-sub-menu`, `.tab-sub-menu li`, `.tab-sub-menu li.active`, and `.tab-sub-menu li:hover:not(.active)`.
 
 Keys may contain letters, numbers, underscores, and hyphens. The parser does not impose a fixed group-count limit. Set enabled to `1` or `0`. An empty ID list creates a show-all tab when another enabled group contains IDs. If the setting is empty, disabled, or contains no IDs, the plugin recovers to the initial configuration.
 
