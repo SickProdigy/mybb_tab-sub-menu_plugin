@@ -1,4 +1,4 @@
-# MyBB Sub Menu Plugin
+# MyBB Tabbed Sub Menu Plugin
 
 Standalone configurable forum-category submenu for MyBB 1.8.
 
