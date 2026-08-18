@@ -3,6 +3,9 @@
  * Tab Sub Menu
  *
  * MyBB plugin for organizing forum categories into configurable tabs.
+ *
+ * Copyright (C) 2026 SickProdigy
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if (!defined('IN_MYBB')) {
@@ -15,9 +18,10 @@ function tab_sub_menu_info()
         'name' => 'Tab Sub Menu',
         'description' => 'Organizes forum categories into configurable tabs for easier navigation.',
         'website' => 'https://www.sickgaming.net',
-        'author' => 'Sick Gaming',
+        'author' => 'SickProdigy',
         'authorsite' => 'https://www.sickgaming.net',
-        'version' => '0.4.3',
+        'license' => 'GPL-3.0-or-later',
+        'version' => '0.5.0',
         'compatibility' => '18*'
     );
 }
@@ -351,7 +355,7 @@ function tab_sub_menu_admin_settings_editor()
     global $mybb, $page, $db;
     $query = $db->simple_select('settinggroups', 'gid', "name='tab_sub_menu'", array('limit' => 1));
     if ((int)$mybb->get_input('gid') !== (int)$db->fetch_field($query, 'gid')) { return; }
-    $url = rtrim($mybb->asset_url, '/') . '/jscripts/tab-sub-menu/tab-sub-menu-admin-settings.js?ver=043';
+    $url = rtrim($mybb->asset_url, '/') . '/jscripts/tab-sub-menu/tab-sub-menu-admin-settings.js?ver=050';
     $page->extra_header .= '<script type="text/javascript" src="' . htmlspecialchars_uni($url) . '"></script>';
 }
 
@@ -375,7 +379,7 @@ function tab_sub_menu_menu_output()
     }
 
     $asset_url = rtrim($mybb->asset_url, '/');
-    $script_url = $asset_url . '/jscripts/tab-sub-menu/tab-sub-menu.js?ver=043';
+    $script_url = $asset_url . '/jscripts/tab-sub-menu/tab-sub-menu.js?ver=050';
     $custom_css = isset($mybb->settings['tab_sub_menu_custom_css'])
         ? trim((string)$mybb->settings['tab_sub_menu_custom_css'])
         : '';

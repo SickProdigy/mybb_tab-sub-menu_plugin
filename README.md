@@ -65,3 +65,9 @@ Keys may contain letters, numbers, underscores, and hyphens. The parser does not
 ## Uninstall
 
 Uninstalling removes the plugin-owned stylesheets, the `Tab Sub Menu` setting group, and its settings. It does not modify unrelated templates or settings.
+
+## License
+
+Copyright (C) 2026 SickProdigy.
+
+This project is licensed under the GNU General Public License, version 3 or any later version. See [LICENSE](LICENSE) for the complete license terms.
