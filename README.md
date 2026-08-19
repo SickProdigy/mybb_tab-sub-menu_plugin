@@ -4,6 +4,8 @@ Standalone configurable forum-category tab menu for MyBB 1.8.
 
 The plugin can be installed and maintained independently of any MyBB theme.
 
+![Tab Sub Menu preview](assets/tab-sub-menu-preview.png)
+
 ## Features
 
 - Per-tab lists of top-level forum category IDs.
