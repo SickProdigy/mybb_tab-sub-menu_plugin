@@ -1,8 +1,8 @@
 # MyBB Tab Sub Menu Plugin
 
-Standalone configurable forum-category tab menu for MyBB 1.8.
-
-The plugin can be installed and maintained independently of any MyBB theme.
+A configurable tabbed navigation menu for organizing MyBB 1.8 forum categories.
+It works independently of your theme and lets visitors quickly switch between
+groups of forums from the board index.
 
 ![Tab Sub Menu preview](assets/tab-sub-menu-preview.png)
 
