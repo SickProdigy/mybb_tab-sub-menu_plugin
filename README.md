@@ -10,6 +10,7 @@ groups of forums from the board index.
 
 - Per-tab lists of top-level forum category IDs.
 - Plugin-owned responsive stylesheet installed into every MyBB theme automatically.
+- Equal-width two-column phone layout with a single-column fallback for narrow screens.
 - Optional show-all tabs with an empty ID list.
 - Enabled/disabled flag for each tab.
 - Remembers the visitor's selected tab in `localStorage`.
@@ -25,6 +26,10 @@ Upload/jscripts/tab-sub-menu/tab-sub-menu.js -> public_html/jscripts/tab-sub-men
 ```
 
 Then install and activate `Tab Sub Menu` under Admin CP → Configuration → Plugins. Activation installs `tab_sub_menu_plugin.css` into every existing theme and rebuilds the MyBB stylesheet caches.
+
+## Upgrade
+
+Replace the plugin files, then deactivate and reactivate **Tab Sub Menu**. Reactivation refreshes the plugin-owned stylesheet and MyBB theme caches. Version 0.5.1 also removes the untouched legacy default from **Custom Menu CSS** so it cannot override maintained responsive rules; administrator-authored custom CSS is preserved.
 
 ## Theme Integration
 

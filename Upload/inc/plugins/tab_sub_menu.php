@@ -21,7 +21,7 @@ function tab_sub_menu_info()
         'author' => 'SickProdigy',
         'authorsite' => 'https://www.sickgaming.net',
         'license' => 'GPL-3.0-or-later',
-        'version' => '0.5.0',
+        'version' => '0.5.1',
         'compatibility' => '18*'
     );
 }
@@ -59,10 +59,17 @@ function tab_sub_menu_ensure_settings()
         } else {
             // Keep the administrator's value, but refresh plugin-owned metadata on upgrade.
             $sid = (int)$existing['sid'];
-            if ($setting['name'] === 'tab_sub_menu_custom_css' && trim((string)$existing['value']) === '') {
-                $setting['value'] = tab_sub_menu_stylesheet();
+            if ($setting["name"] === "tab_sub_menu_custom_css") {
+                $custom_css = trim((string)$existing["value"]);
+                $custom_css_fingerprint = sha1(str_replace("\r\n", "\n", $custom_css));
+                if ($custom_css === "" || $custom_css_fingerprint === "9a781413fcb7bd37804488d4f743da81714592ea") {
+                    // Remove the untouched 0.5.0 default copy so it cannot override maintained responsive CSS.
+                    $setting["value"] = "";
+                } else {
+                    unset($setting["value"]);
+                }
             } else {
-                unset($setting['value']);
+                unset($setting["value"]);
             }
             $db->update_query('settings', $setting, "sid='{$sid}'", 1);
         }
@@ -86,9 +93,9 @@ function tab_sub_menu_settings($gid)
         array(
             'name' => 'tab_sub_menu_custom_css',
             'title' => 'Custom Menu CSS',
-            'description' => 'Optional CSS added after the plugin stylesheet. Useful selectors: #forum-tab-sub-menu, .tab-sub-menu li, .tab-sub-menu li.active, and .tab-sub-menu li:hover:not(.active).',
+            'description' => 'Optional CSS added after the maintained plugin stylesheet. Useful selectors: #forum-tab-sub-menu, .tab-sub-menu li, .tab-sub-menu li.active, and .tab-sub-menu li:hover:not(.active).',
             'optionscode' => 'textarea',
-            'value' => tab_sub_menu_stylesheet(),
+            'value' => '',
             'disporder' => 2,
             'gid' => $gid
         )
@@ -211,6 +218,43 @@ function tab_sub_menu_stylesheet()
     background: linear-gradient(180deg, #bfc2f7 0%, #a0a3f2 100%);
     box-shadow: 0 2px 12px rgba(160, 163, 242, 0.18);
     color: #333;
+}
+
+@media (max-width: 600px) {
+    #forum-tab-sub-menu {
+        margin: 14px 0 20px;
+    }
+
+    .tab-sub-menu {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        box-sizing: border-box;
+        width: calc(100vw - 20px);
+        max-width: 100%;
+        margin-right: auto;
+        margin-left: auto;
+    }
+
+    .tab-sub-menu li {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        min-width: 0;
+        min-height: 46px;
+        padding: 11px 10px;
+        font-size: 1em;
+        line-height: 1.25;
+        overflow-wrap: anywhere;
+    }
+}
+
+@media (max-width: 360px) {
+    .tab-sub-menu {
+        grid-template-columns: minmax(0, 1fr);
+        width: calc(100vw - 16px);
+    }
 }
 CSS;
 }
