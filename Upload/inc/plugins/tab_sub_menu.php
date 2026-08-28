@@ -21,7 +21,7 @@ function tab_sub_menu_info()
         'author' => 'SickProdigy',
         'authorsite' => 'https://www.sickgaming.net',
         'license' => 'GPL-3.0-or-later',
-        'version' => '0.5.6',
+        'version' => '0.5.7',
         'compatibility' => '18*'
     );
 }
@@ -479,8 +479,14 @@ function tab_sub_menu_menu_output()
     }
 
     $asset_url = rtrim($mybb->asset_url, '/');
-    $script_url = $asset_url . '/jscripts/tab-sub-menu/tab-sub-menu.js?ver=056';
+    $script_url = $asset_url . '/jscripts/tab-sub-menu/tab-sub-menu.js?ver=057';
     $hide_empty_tabs = !empty($mybb->settings['tab_sub_menu_hide_empty_tabs']) ? 'true' : 'false';
+    $board_url = isset($mybb->settings['bburl']) ? (string)$mybb->settings['bburl'] : '';
+    $storage_key_json = json_encode(tab_sub_menu_storage_key($board_url));
+    if ($storage_key_json === false) {
+        $storage_key_json = '"tabSubMenuTab:/"';
+    }
+    $storage_key_json = str_replace(array('<', '>', '&'), array('\u003C', '\u003E', '\u0026'), $storage_key_json);
     $custom_css = isset($mybb->settings['tab_sub_menu_custom_css'])
         ? trim((string)$mybb->settings['tab_sub_menu_custom_css'])
         : '';
@@ -490,10 +496,19 @@ function tab_sub_menu_menu_output()
 
     $tab_sub_menu_assets = $custom_style
         . '<script type="text/javascript">window.tabSubMenuGroups = ' . $json
-        . '; window.tabSubMenuHideEmptyTabs = ' . $hide_empty_tabs . ';</script>'
+        . '; window.tabSubMenuHideEmptyTabs = ' . $hide_empty_tabs
+        . '; window.tabSubMenuStorageKey = ' . $storage_key_json . ';</script>'
         . '<script type="text/javascript" src="' . htmlspecialchars_uni($script_url) . '"></script>';
 
     $tab_sub_menu = tab_sub_menu_build_tab_sub_menu($group_labels);
+}
+
+function tab_sub_menu_storage_key($board_url)
+{
+    $board_path = parse_url((string)$board_url, PHP_URL_PATH);
+    $board_path = is_string($board_path) ? '/' . trim($board_path, '/') : '/';
+
+    return 'tabSubMenuTab:' . $board_path;
 }
 
 function tab_sub_menu_get_menu_groups()

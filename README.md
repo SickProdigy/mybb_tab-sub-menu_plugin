@@ -13,7 +13,7 @@ groups of forums from the board index.
 - Equal-width two-column phone layout with a single-column fallback for narrow screens.
 - Optional show-all tabs with an empty ID list.
 - Enabled/disabled flag for each tab.
-- Remembers the visitor's selected tab in `localStorage`.
+- Remembers the visitor's selected tab in installation-scoped `localStorage`.
 - Falls back to Home or the first configured tab.
 - Provides keyboard-operable tab controls with visible focus and selected-state announcements.
 - Optionally hides tabs that have no categories rendered for the current visitor.
@@ -56,6 +56,8 @@ Themes added, imported, or duplicated while the plugin is active receive the sty
 The plugin creates a `Tab Sub Menu` settings group with a row editor. Use **Add tab** and **Remove** to manage rows. Each row has a unique internal Tab ID (such as `gaming`), the Display name visitors see, comma-separated Forum/Category IDs, and an Enabled checkbox. Leave the IDs empty for a show-all tab.
 
 Enable **Hide Empty Tabs** to remove tabs whose configured category IDs are absent from the current visitor's rendered forum index. This respects MyBB forum visibility, ignores deleted or stale IDs, keeps show-all tabs available, and falls back to Home or the first available tab when a saved selection is unavailable. Disable the setting to keep every configured tab visible.
+
+Remembered selections are scoped to the configured MyBB board path, so multiple installations on one domain keep independent active tabs. The first visit after upgrading migrates a valid legacy `tabSubMenuTab` value to the scoped key. Invalid, removed, or unavailable saved tab IDs are discarded before falling back to Home or the first available tab.
 
 The editor preserves the original format internally for compatibility:
 
