@@ -15,6 +15,7 @@ groups of forums from the board index.
 - Enabled/disabled flag for each tab.
 - Remembers the visitor's selected tab in `localStorage`.
 - Falls back to Home or the first configured tab.
+- Provides keyboard-operable tab controls with visible focus and selected-state announcements.
 
 ## Install
 
@@ -41,8 +42,10 @@ Themes added, imported, or duplicated while the plugin is active receive the sty
 
 ```html
 <div id="forum-tab-sub-menu">
-    <ul class="tab-sub-menu">
-        <li data-tab="home" class="active">Home</li>
+    <ul class="tab-sub-menu" role="tablist" aria-label="Forum categories">
+        <li role="presentation" class="active">
+            <button type="button" role="tab" data-tab="home" aria-selected="true" tabindex="0">Home</button>
+        </li>
     </ul>
 </div>
 ```

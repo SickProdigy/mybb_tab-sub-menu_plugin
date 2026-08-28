@@ -21,7 +21,7 @@ function tab_sub_menu_info()
         'author' => 'SickProdigy',
         'authorsite' => 'https://www.sickgaming.net',
         'license' => 'GPL-3.0-or-later',
-        'version' => '0.5.4',
+        'version' => '0.5.5',
         'compatibility' => '18*'
     );
 }
@@ -201,7 +201,6 @@ function tab_sub_menu_stylesheet()
 .tab-sub-menu li {
     display: inline-block;
     min-height: 48px;
-    padding: 14px 28px;
     box-sizing: border-box;
     border: 1px solid #a0a3f2;
     border-radius: 6px;
@@ -211,6 +210,24 @@ function tab_sub_menu_stylesheet()
     cursor: pointer;
     font-size: 1.1em;
     transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.tab-sub-menu button {
+    display: block;
+    width: 100%;
+    min-height: 46px;
+    padding: 14px 28px;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: inherit;
+    font: inherit;
+    line-height: inherit;
+}
+
+.tab-sub-menu button:focus-visible {
+    outline: 3px solid #222;
+    outline-offset: 3px;
 }
 
 .tab-sub-menu li.active {
@@ -249,10 +266,13 @@ function tab_sub_menu_stylesheet()
         width: 100%;
         min-width: 0;
         min-height: 46px;
-        padding: 11px 10px;
         font-size: 1em;
         line-height: 1.25;
         overflow-wrap: anywhere;
+    }
+
+    .tab-sub-menu button {
+        padding: 11px 10px;
     }
 }
 
@@ -446,7 +466,7 @@ function tab_sub_menu_menu_output()
     }
 
     $asset_url = rtrim($mybb->asset_url, '/');
-    $script_url = $asset_url . '/jscripts/tab-sub-menu/tab-sub-menu.js?ver=050';
+    $script_url = $asset_url . '/jscripts/tab-sub-menu/tab-sub-menu.js?ver=055';
     $custom_css = isset($mybb->settings['tab_sub_menu_custom_css'])
         ? trim((string)$mybb->settings['tab_sub_menu_custom_css'])
         : '';
@@ -559,12 +579,16 @@ function tab_sub_menu_default_menu_setting()
 
 function tab_sub_menu_build_tab_sub_menu($groups)
 {
-    $html = '<div id="forum-tab-sub-menu"><ul class="tab-sub-menu">';
+    $html = '<div id="forum-tab-sub-menu"><ul class="tab-sub-menu" role="tablist" aria-label="Forum categories">';
     $first = true;
 
     foreach ($groups as $key => $label) {
         $active = $first ? ' class="active"' : '';
-        $html .= '<li data-tab="' . htmlspecialchars_uni($key) . '"' . $active . '>' . htmlspecialchars_uni($label) . '</li>';
+        $selected = $first ? 'true' : 'false';
+        $tabindex = $first ? '0' : '-1';
+        $html .= '<li role="presentation"' . $active . '><button type="button" role="tab" data-tab="'
+            . htmlspecialchars_uni($key) . '" aria-selected="' . $selected . '" tabindex="' . $tabindex . '">'
+            . htmlspecialchars_uni($label) . '</button></li>';
         $first = false;
     }
 
