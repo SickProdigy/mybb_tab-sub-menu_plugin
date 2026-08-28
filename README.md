@@ -51,6 +51,18 @@ Themes added, imported, or duplicated while the plugin is active receive the sty
 </div>
 ```
 
+### Theme Compatibility
+
+The built-in category adapter supports stock MyBB 1.8 and Space Cadet markup by locating `tbody` elements whose IDs use `cat_{fid}_e`, filtering their containing tables, and handling an adjacent `<br>` spacer when present. Missing spacers do not affect filtering.
+
+Substantially customized themes can mark each outer category component directly:
+
+```html
+<section data-tab-sub-menu-category="{$forum['fid']}">...</section>
+```
+
+For other structures, define `window.tabSubMenuCategoryAdapter` before `{$tab_sub_menu_assets}`. The adapter accepts a CSS `selector` and optional `getId(marker)`, `getContainer(marker)`, and `getSeparators(marker, container)` functions. `getSeparators` should return an array or array-like collection of decorative elements that should follow the category visibility. If the selector is invalid, the adapter throws, or no supported categories are discovered, filtering fails open and leaves the complete forum index visible.
+
 ## Configuration
 
 The plugin creates a `Tab Sub Menu` settings group with a row editor. Use **Add tab** and **Remove** to manage rows. Each row has a unique internal Tab ID (such as `gaming`), the Display name visitors see, comma-separated Forum/Category IDs, and an Enabled checkbox. Leave the IDs empty for a show-all tab.

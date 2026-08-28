@@ -21,7 +21,7 @@ function tab_sub_menu_info()
         'author' => 'SickProdigy',
         'authorsite' => 'https://www.sickgaming.net',
         'license' => 'GPL-3.0-or-later',
-        'version' => '0.5.7',
+        'version' => '0.5.8',
         'compatibility' => '18*'
     );
 }
@@ -479,7 +479,7 @@ function tab_sub_menu_menu_output()
     }
 
     $asset_url = rtrim($mybb->asset_url, '/');
-    $script_url = $asset_url . '/jscripts/tab-sub-menu/tab-sub-menu.js?ver=057';
+    $script_url = $asset_url . '/jscripts/tab-sub-menu/tab-sub-menu.js?ver=058';
     $hide_empty_tabs = !empty($mybb->settings['tab_sub_menu_hide_empty_tabs']) ? 'true' : 'false';
     $board_url = isset($mybb->settings['bburl']) ? (string)$mybb->settings['bburl'] : '';
     $storage_key_json = json_encode(tab_sub_menu_storage_key($board_url));
