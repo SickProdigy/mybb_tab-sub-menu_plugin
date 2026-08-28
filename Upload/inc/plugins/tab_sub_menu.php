@@ -21,7 +21,7 @@ function tab_sub_menu_info()
         'author' => 'SickProdigy',
         'authorsite' => 'https://www.sickgaming.net',
         'license' => 'GPL-3.0-or-later',
-        'version' => '0.5.1',
+        'version' => '0.5.2',
         'compatibility' => '18*'
     );
 }
@@ -397,10 +397,21 @@ $plugins->add_hook('admin_config_settings_change', 'tab_sub_menu_admin_settings_
 function tab_sub_menu_admin_settings_editor()
 {
     global $mybb, $page, $db;
-    $query = $db->simple_select('settinggroups', 'gid', "name='tab_sub_menu'", array('limit' => 1));
-    if ((int)$mybb->get_input('gid') !== (int)$db->fetch_field($query, 'gid')) { return; }
-    $url = rtrim($mybb->asset_url, '/') . '/jscripts/tab-sub-menu/tab-sub-menu-admin-settings.js?ver=050';
-    $page->extra_header .= '<script type="text/javascript" src="' . htmlspecialchars_uni($url) . '"></script>';
+    $query = $db->simple_select("settinggroups", "gid", "name='tab_sub_menu'", array("limit" => 1));
+    if ((int)$mybb->get_input("gid") !== (int)$db->fetch_field($query, "gid")) { return; }
+
+    $categories = array();
+    $query = $db->simple_select("forums", "fid, name", "type='c' AND pid='0'", array("order_by" => "disporder", "order_dir" => "ASC"));
+    while ($category = $db->fetch_array($query)) {
+        $categories[] = array("id" => (int)$category["fid"], "name" => (string)$category["name"]);
+    }
+    $json = json_encode($categories);
+    if ($json === false) { $json = "[]"; }
+    $json = str_replace(array("<", ">", "&"), array("\u003C", "\u003E", "\u0026"), $json);
+
+    $base = rtrim($mybb->asset_url, "/") . "/jscripts/tab-sub-menu/";
+    $page->extra_header .= "<script>window.tabSubMenuCategories = " . $json . ";</script>";
+    $page->extra_header .= '<script type="text/javascript" src="' . htmlspecialchars_uni($base . "tab-sub-menu-admin-settings.js?ver=052") . '"></script>';
 }
 
 $plugins->add_hook('global_start', 'tab_sub_menu_menu_output');
