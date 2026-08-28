@@ -21,7 +21,7 @@ function tab_sub_menu_info()
         'author' => 'SickProdigy',
         'authorsite' => 'https://www.sickgaming.net',
         'license' => 'GPL-3.0-or-later',
-        'version' => '0.5.3',
+        'version' => '0.5.4',
         'compatibility' => '18*'
     );
 }
@@ -132,6 +132,11 @@ function tab_sub_menu_activate()
     tab_sub_menu_ensure_settings();
     tab_sub_menu_sync_stylesheets();
 
+    tab_sub_menu_sync_template_variables();
+}
+
+function tab_sub_menu_sync_template_variables()
+{
     require_once MYBB_ROOT . 'inc/adminfunctions_templates.php';
 
     find_replace_templatesets(
@@ -155,6 +160,7 @@ function tab_sub_menu_activate()
         '#' . preg_quote('{$stylesheets}') . '#i',
         '{$stylesheets}{$tab_sub_menu_assets}'
     );
+    return true;
 }
 
 function tab_sub_menu_deactivate()
@@ -383,14 +389,15 @@ function tab_sub_menu_remove_stylesheets()
     return true;
 }
 
-function tab_sub_menu_sync_stylesheets_after_theme_change()
+function tab_sub_menu_sync_after_theme_change()
 {
     tab_sub_menu_sync_stylesheets();
+    tab_sub_menu_sync_template_variables();
 }
 
-$plugins->add_hook('admin_style_themes_add_commit', 'tab_sub_menu_sync_stylesheets_after_theme_change');
-$plugins->add_hook('admin_style_themes_import_commit', 'tab_sub_menu_sync_stylesheets_after_theme_change');
-$plugins->add_hook('admin_style_themes_duplicate_commit', 'tab_sub_menu_sync_stylesheets_after_theme_change');
+$plugins->add_hook('admin_style_themes_add_commit', 'tab_sub_menu_sync_after_theme_change');
+$plugins->add_hook('admin_style_themes_import_commit', 'tab_sub_menu_sync_after_theme_change');
+$plugins->add_hook('admin_style_themes_duplicate_commit', 'tab_sub_menu_sync_after_theme_change');
 
 $plugins->add_hook('admin_config_settings_change', 'tab_sub_menu_admin_settings_editor');
 

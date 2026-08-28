@@ -25,7 +25,7 @@ Upload/inc/plugins/tab_sub_menu.php -> public_html/inc/plugins/tab_sub_menu.php
 Upload/jscripts/tab-sub-menu/tab-sub-menu.js -> public_html/jscripts/tab-sub-menu/tab-sub-menu.js
 ```
 
-Then install and activate `Tab Sub Menu` under Admin CP → Configuration → Plugins. Activation installs `tab_sub_menu_plugin.css` into every existing theme and rebuilds the MyBB stylesheet caches.
+Then install and activate `Tab Sub Menu` under Admin CP → Configuration → Plugins. Activation installs `tab_sub_menu_plugin.css` and the required template variables into every existing theme, then rebuilds the MyBB stylesheet caches.
 
 ## Upgrade
 
@@ -37,7 +37,7 @@ Activation installs and maintains `tab_sub_menu_plugin.css` in every theme, then
 
 If a customized template does not contain `{$stylesheets}` or `{$forums}`, add the corresponding plugin variable manually. Without the plugin, the normal `{$forums}` output continues to show the complete forum list.
 
-Themes added, imported, or duplicated while the plugin is active receive the stylesheet automatically. The plugin generates this markup:
+Themes added, imported, or duplicated while the plugin is active receive the stylesheet and required template variables automatically. The plugin generates this markup:
 
 ```html
 <div id="forum-tab-sub-menu">
