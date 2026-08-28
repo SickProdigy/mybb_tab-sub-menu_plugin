@@ -36,11 +36,37 @@
     var tablist = document.querySelector('.tab-sub-menu[role="tablist"]');
     if (!tablist) return;
 
-    var tabs = Array.prototype.slice.call(tablist.querySelectorAll('button[role="tab"]'));
-    if (!tabs.length) return;
+    var allTabs = Array.prototype.slice.call(tablist.querySelectorAll('button[role="tab"]'));
+    if (!allTabs.length) return;
+
+    var hideEmptyTabs = window.tabSubMenuHideEmptyTabs === true;
+    var tabs = allTabs.filter(function (tab) {
+      if (!hideEmptyTabs || !categoryGroups) return true;
+
+      var tabIds = categoryGroups[tab.getAttribute('data-tab')] || [];
+      var available = tabIds.length === 0 || tabIds.some(function (forumId) {
+        return document.getElementById('cat_' + forumId + '_e') !== null;
+      });
+
+      if (!available) {
+        tab.setAttribute('aria-selected', 'false');
+        tab.setAttribute('tabindex', '-1');
+        if (tab.parentElement) {
+          tab.parentElement.classList.remove('active');
+          tab.parentElement.hidden = true;
+        }
+      }
+
+      return available;
+    });
+
+    if (!tabs.length) {
+      tablist.hidden = true;
+      return;
+    }
 
     function activate(tab, remember) {
-      tabs.forEach(function (candidate) {
+      allTabs.forEach(function (candidate) {
         var selected = candidate === tab;
         candidate.setAttribute('aria-selected', selected ? 'true' : 'false');
         candidate.setAttribute('tabindex', selected ? '0' : '-1');

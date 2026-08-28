@@ -21,7 +21,7 @@ function tab_sub_menu_info()
         'author' => 'SickProdigy',
         'authorsite' => 'https://www.sickgaming.net',
         'license' => 'GPL-3.0-or-later',
-        'version' => '0.5.5',
+        'version' => '0.5.6',
         'compatibility' => '18*'
     );
 }
@@ -91,12 +91,21 @@ function tab_sub_menu_settings($gid)
             'gid' => $gid
         ),
         array(
+            'name' => 'tab_sub_menu_hide_empty_tabs',
+            'title' => 'Hide Empty Tabs',
+            'description' => 'Hide tabs whose configured categories are not present in the forum index rendered for the current visitor. Show-all tabs remain available.',
+            'optionscode' => 'yesno',
+            'value' => '1',
+            'disporder' => 2,
+            'gid' => $gid
+        ),
+        array(
             'name' => 'tab_sub_menu_custom_css',
             'title' => 'Custom Menu CSS',
             'description' => 'Optional CSS added after the maintained plugin stylesheet. Useful selectors: #forum-tab-sub-menu, .tab-sub-menu li, .tab-sub-menu li.active, and .tab-sub-menu li:hover:not(.active).',
             'optionscode' => 'textarea',
             'value' => '',
-            'disporder' => 2,
+            'disporder' => 3,
             'gid' => $gid
         )
     );
@@ -210,6 +219,10 @@ function tab_sub_menu_stylesheet()
     cursor: pointer;
     font-size: 1.1em;
     transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.tab-sub-menu li[hidden] {
+    display: none;
 }
 
 .tab-sub-menu button {
@@ -466,7 +479,8 @@ function tab_sub_menu_menu_output()
     }
 
     $asset_url = rtrim($mybb->asset_url, '/');
-    $script_url = $asset_url . '/jscripts/tab-sub-menu/tab-sub-menu.js?ver=055';
+    $script_url = $asset_url . '/jscripts/tab-sub-menu/tab-sub-menu.js?ver=056';
+    $hide_empty_tabs = !empty($mybb->settings['tab_sub_menu_hide_empty_tabs']) ? 'true' : 'false';
     $custom_css = isset($mybb->settings['tab_sub_menu_custom_css'])
         ? trim((string)$mybb->settings['tab_sub_menu_custom_css'])
         : '';
@@ -475,7 +489,8 @@ function tab_sub_menu_menu_output()
         : '';
 
     $tab_sub_menu_assets = $custom_style
-        . '<script type="text/javascript">window.tabSubMenuGroups = ' . $json . ';</script>'
+        . '<script type="text/javascript">window.tabSubMenuGroups = ' . $json
+        . '; window.tabSubMenuHideEmptyTabs = ' . $hide_empty_tabs . ';</script>'
         . '<script type="text/javascript" src="' . htmlspecialchars_uni($script_url) . '"></script>';
 
     $tab_sub_menu = tab_sub_menu_build_tab_sub_menu($group_labels);
