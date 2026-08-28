@@ -26,3 +26,42 @@ document.addEventListener('DOMContentLoaded', function () {
 }());
 
 (function(){document.addEventListener('DOMContentLoaded',function(){var src=document.getElementById('setting_tab_sub_menu_groups'),cs=window.tabSubMenuCategories||[],ed=src&&src.previousElementSibling;if(!ed)return;var rows=ed.querySelector('.sm-rows'),box=document.createElement('div');box.style.cssText='margin:0 0 12px;padding:9px;border-left:3px solid #888';ed.insertBefore(box,ed.querySelector('.sm-head'));function ids(v){var o={};return String(v).split(',').map(Number).filter(function(n){if(n<1||o[n])return false;o[n]=1;return true})}function used(){var u={};rows.querySelectorAll('.sm-row').forEach(function(r){var n=r.querySelector('.sm-label').value||'Unnamed tab';ids(r.querySelector('.sm-forums').value).forEach(function(i){(u[i]||(u[i]=[])).push(n)})});return u}function update(){var u=used(),m=cs.filter(function(c){return !u[c.id]});box.textContent=cs.length?(m.length?'Missing: '+m.map(function(c){return c.name+' ('+c.id+')'}).join(', '):'All top-level categories assigned.'):'Category list unavailable; enter IDs manually.'}function enhance(){rows.querySelectorAll('.sm-row').forEach(function(r){var i=r.querySelector('.sm-forums');if(!i||r.querySelector('.sm-pick'))return;var b=document.createElement('button');b.type='button';b.className='button sm-pick';b.textContent='Select';b.style.marginLeft='6px';b.onclick=function(){var u=used(),own=ids(i.value),text=cs.map(function(c){return c.id+': '+c.name+(u[c.id]?' [used by '+u[c.id].join(', ')+']':' [missing]')}).join('\n'),answer=prompt('Top-level categories:\n\n'+text+'\n\nEnter IDs to add:', '');if(answer===null)return;var all=own.concat(ids(answer)),seen={};i.value=all.filter(function(n){if(seen[n])return false;seen[n]=1;return true}).join(',');i.dispatchEvent(new Event('input',{bubbles:true}))};i.parentNode.appendChild(b)})}new MutationObserver(function(){enhance();update()}).observe(rows,{childList:true,subtree:true});ed.addEventListener('input',update);ed.addEventListener('change',update);enhance();update()})}());
+
+(function () {
+  document.addEventListener('DOMContentLoaded', function () {
+    var customCss = document.getElementById('setting_tab_sub_menu_custom_css');
+    var maintainedCss = window.tabSubMenuMaintainedCss || '';
+    if (!customCss || !maintainedCss) return;
+
+    var reference = document.createElement('details');
+    reference.style.marginTop = '10px';
+
+    var summary = document.createElement('summary');
+    summary.textContent = 'View maintained default CSS';
+    summary.style.cursor = 'pointer';
+    reference.appendChild(summary);
+
+    var warning = document.createElement('p');
+    warning.textContent = 'Custom CSS loads after this maintained stylesheet. Copy only when you want a full editable starting point; copied rules can override future plugin style updates.';
+    reference.appendChild(warning);
+
+    var copy = document.createElement('button');
+    copy.type = 'button';
+    copy.className = 'button';
+    copy.textContent = 'Copy defaults to Custom Menu CSS';
+    copy.addEventListener('click', function () {
+      if (customCss.value.trim() !== '' && !window.confirm('Replace your existing Custom Menu CSS with the maintained defaults?')) return;
+      customCss.value = maintainedCss;
+      customCss.dispatchEvent(new Event('input', { bubbles: true }));
+      customCss.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    reference.appendChild(copy);
+
+    var preview = document.createElement('pre');
+    preview.textContent = maintainedCss;
+    preview.style.cssText = 'max-height:420px;overflow:auto;margin-top:10px;padding:12px;border:1px solid #ccc;background:#f7f7f7;white-space:pre;';
+    reference.appendChild(preview);
+
+    customCss.insertAdjacentElement('afterend', reference);
+  });
+}());

@@ -21,7 +21,7 @@ function tab_sub_menu_info()
         'author' => 'SickProdigy',
         'authorsite' => 'https://www.sickgaming.net',
         'license' => 'GPL-3.0-or-later',
-        'version' => '0.5.2',
+        'version' => '0.5.3',
         'compatibility' => '18*'
     );
 }
@@ -409,9 +409,14 @@ function tab_sub_menu_admin_settings_editor()
     if ($json === false) { $json = "[]"; }
     $json = str_replace(array("<", ">", "&"), array("\u003C", "\u003E", "\u0026"), $json);
 
+    $stylesheet_json = json_encode(tab_sub_menu_stylesheet());
+    if ($stylesheet_json === false) { $stylesheet_json = '""'; }
+    $stylesheet_json = str_replace(array("<", ">", "&"), array("\u003C", "\u003E", "\u0026"), $stylesheet_json);
+
     $base = rtrim($mybb->asset_url, "/") . "/jscripts/tab-sub-menu/";
     $page->extra_header .= "<script>window.tabSubMenuCategories = " . $json . ";</script>";
-    $page->extra_header .= '<script type="text/javascript" src="' . htmlspecialchars_uni($base . "tab-sub-menu-admin-settings.js?ver=052") . '"></script>';
+    $page->extra_header .= "<script>window.tabSubMenuMaintainedCss = " . $stylesheet_json . ";</script>";
+    $page->extra_header .= '<script type="text/javascript" src="' . htmlspecialchars_uni($base . "tab-sub-menu-admin-settings.js?ver=053") . '"></script>';
 }
 
 $plugins->add_hook('global_start', 'tab_sub_menu_menu_output');
