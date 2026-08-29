@@ -14,7 +14,9 @@ groups of forums from the board index.
 - Optional show-all tabs with an empty ID list.
 - Enabled/disabled flag for each tab.
 - Remembers the visitor's selected tab in installation-scoped `localStorage`.
-- Falls back to Home or the first configured tab.
+- Configurable default tab and visitor-selection persistence.
+- Optional shareable tab URLs with Back and Forward navigation.
+- Flash-resistant initialization with a no-JavaScript and script-failure fallback.
 - Provides keyboard-operable tab controls with visible focus and selected-state announcements.
 - Optionally hides tabs that have no categories rendered for the current visitor.
 
@@ -67,7 +69,13 @@ For other structures, define `window.tabSubMenuCategoryAdapter` before `{$tab_su
 
 The plugin creates a `Tab Sub Menu` settings group with a row editor. Use **Add tab** and **Remove** to manage rows. Each row has a unique internal Tab ID (such as `gaming`), the Display name visitors see, comma-separated Forum/Category IDs, and an Enabled checkbox. Leave the IDs empty for a show-all tab.
 
-Enable **Hide Empty Tabs** to remove tabs whose configured category IDs are absent from the current visitor's rendered forum index. This respects MyBB forum visibility, ignores deleted or stale IDs, keeps show-all tabs available, and falls back to Home or the first available tab when a saved selection is unavailable. Disable the setting to keep every configured tab visible.
+Enable **Hide Empty Tabs** to remove tabs whose configured category IDs are absent from the current visitor's rendered forum index. This respects MyBB forum visibility, ignores deleted or stale IDs, keeps show-all tabs available, and falls back to the configured default or first available tab when a saved selection is unavailable. Disable the setting to keep every configured tab visible.
+
+Choose any enabled row under **Default Tab** and use **Remember Visitor Selection** to control whether browser storage is used as a fallback. The selection order is: a valid URL tab when URL state is enabled, a valid remembered tab when persistence is enabled, the configured default tab, then the first tab available to that visitor. Disabling persistence removes the installation-scoped saved value and starts from URL state, the configured default, or its safe fallback.
+
+Enable **Shareable Tab URLs** to place the active key in the `tsm_tab` query parameter. URL state has priority over remembered and default selections, existing query parameters and hashes are preserved, and Back/Forward navigation restores earlier tab choices. Invalid or visitor-unavailable URL keys fall through safely. Disable the setting to leave the address unchanged and use local selection state only.
+
+On the board index, the plugin briefly applies an initialization state before the page is painted and removes it immediately after filtering. The state preserves layout space to avoid a category flash and cumulative layout shift. The window load event removes the state if the public initializer fails, with a ten-second emergency timeout as a final backstop. With JavaScript disabled, the state is never applied and the complete forum index remains visible.
 
 Remembered selections are scoped to the configured MyBB board path, so multiple installations on one domain keep independent active tabs. The first visit after upgrading migrates a valid legacy `tabSubMenuTab` value to the scoped key. Invalid, removed, or unavailable saved tab IDs are discarded before falling back to Home or the first available tab.
 

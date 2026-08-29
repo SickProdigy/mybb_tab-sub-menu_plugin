@@ -84,20 +84,36 @@
   }
 
   document.addEventListener('DOMContentLoaded', function () {
+    function finishInitialization() {
+      document.documentElement.classList.remove('tab-sub-menu-initializing');
+    }
+
     var categoryGroups = getCategoryGroups();
     var categoryComponents = discoverCategories();
     var canFilterCategories = Object.keys(categoryComponents).length > 0;
     var tablist = document.querySelector('.tab-sub-menu[role="tablist"]');
-    if (!tablist) return;
+    if (!tablist) {
+      finishInitialization();
+      return;
+    }
 
     var allTabs = Array.prototype.slice.call(tablist.querySelectorAll('button[role="tab"]'));
-    if (!allTabs.length) return;
+    if (!allTabs.length) {
+      finishInitialization();
+      return;
+    }
 
     var hideEmptyTabs = window.tabSubMenuHideEmptyTabs === true;
     var storageKey = typeof window.tabSubMenuStorageKey === 'string'
       ? window.tabSubMenuStorageKey
       : 'tabSubMenuTab:/';
     var legacyStorageKey = 'tabSubMenuTab';
+    var defaultTabKey = typeof window.tabSubMenuDefaultTab === 'string'
+      ? window.tabSubMenuDefaultTab
+      : 'home';
+    var rememberSelection = window.tabSubMenuRememberSelection !== false;
+    var urlStateEnabled = window.tabSubMenuUrlState !== false;
+    var urlParameter = 'tsm_tab';
     var tabs = allTabs.filter(function (tab) {
       if (!hideEmptyTabs || !categoryGroups || !canFilterCategories) return true;
 
@@ -120,10 +136,11 @@
 
     if (!tabs.length) {
       tablist.hidden = true;
+      finishInitialization();
       return;
     }
 
-    function activate(tab, remember) {
+    function activate(tab, remember, updateHistory) {
       allTabs.forEach(function (candidate) {
         var selected = candidate === tab;
         candidate.setAttribute('aria-selected', selected ? 'true' : 'false');
@@ -132,16 +149,17 @@
       });
 
       var selectedKey = tab.getAttribute('data-tab');
-      if (remember) {
+      if (remember && rememberSelection) {
         try { window.localStorage.setItem(storageKey, selectedKey); } catch (error) {}
       }
 
       if (categoryGroups) setCategoryVisibility(categoryGroups[selectedKey] || [], categoryComponents);
+      if (updateHistory) writeUrlSelection(selectedKey, false);
     }
 
     tabs.forEach(function (tab, index) {
       tab.addEventListener('click', function () {
-        activate(tab, true);
+        activate(tab, true, true);
       });
 
       tab.addEventListener('keydown', function (event) {
@@ -155,7 +173,7 @@
 
         event.preventDefault();
         tabs[nextIndex].focus();
-        activate(tabs[nextIndex], true);
+        activate(tabs[nextIndex], true, true);
       });
     });
 
@@ -165,27 +183,71 @@
         : null;
     }
 
-    var initialTab = null;
+    function readUrlSelection() {
+      if (!urlStateEnabled || typeof window.URL !== 'function') return null;
+      try {
+        return new window.URL(window.location.href).searchParams.get(urlParameter);
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function writeUrlSelection(tabKey, replace) {
+      if (!urlStateEnabled || typeof window.URL !== 'function' || !window.history) return;
+      try {
+        var url = new window.URL(window.location.href);
+        if (url.searchParams.get(urlParameter) === tabKey) return;
+        url.searchParams.set(urlParameter, tabKey);
+        var method = replace ? 'replaceState' : 'pushState';
+        if (typeof window.history[method] === 'function') {
+          window.history[method](null, '', url.pathname + url.search + url.hash);
+        }
+      } catch (error) {}
+    }
+
+    var initialTab = findAvailableTab(readUrlSelection());
     try {
-      var scopedSelection = window.localStorage.getItem(storageKey);
-      initialTab = findAvailableTab(scopedSelection);
-      if (scopedSelection !== null && !initialTab) window.localStorage.removeItem(storageKey);
+      if (!rememberSelection) {
+        window.localStorage.removeItem(storageKey);
+      }
 
-      if (!initialTab) {
-        var legacySelection = window.localStorage.getItem(legacyStorageKey);
-        initialTab = findAvailableTab(legacySelection);
+      if (rememberSelection && !initialTab) {
+        var scopedSelection = window.localStorage.getItem(storageKey);
+        initialTab = findAvailableTab(scopedSelection);
+        if (scopedSelection !== null && !initialTab) window.localStorage.removeItem(storageKey);
 
-        if (legacySelection !== null) {
-          if (initialTab) window.localStorage.setItem(storageKey, legacySelection);
-          window.localStorage.removeItem(legacyStorageKey);
+        if (!initialTab) {
+          var legacySelection = window.localStorage.getItem(legacyStorageKey);
+          initialTab = findAvailableTab(legacySelection);
+
+          if (legacySelection !== null) {
+            if (initialTab) window.localStorage.setItem(storageKey, legacySelection);
+            window.localStorage.removeItem(legacyStorageKey);
+          }
         }
       }
     } catch (error) {}
 
     if (!initialTab) {
-      initialTab = tabs.find(function (tab) { return tab.getAttribute('data-tab') === 'home'; }) || tabs[0];
+      initialTab = findAvailableTab(defaultTabKey) || tabs[0];
     }
 
-    activate(initialTab, false);
+    activate(initialTab, false, false);
+    writeUrlSelection(initialTab.getAttribute('data-tab'), true);
+    finishInitialization();
+
+    if (urlStateEnabled) {
+      window.addEventListener('popstate', function () {
+        var requestedTab = findAvailableTab(readUrlSelection());
+        var fallbackTab = requestedTab;
+
+        if (!fallbackTab && rememberSelection) {
+          try { fallbackTab = findAvailableTab(window.localStorage.getItem(storageKey)); } catch (error) {}
+        }
+        if (!fallbackTab) fallbackTab = findAvailableTab(defaultTabKey) || tabs[0];
+
+        activate(fallbackTab, false, false);
+      });
+    }
   });
 }());

@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', function () {
   editor.innerHTML = '<div class="sm-help">Use a short, unique Tab ID such as <code>gaming</code>. Enter Forum/Category IDs separated by commas, such as <code>2,3,4</code>. Leave the IDs empty for a “show all” tab.</div><div class="sm-head"><span>Tab ID (internal)</span><span>Display name</span><span>Forum/Category IDs</span><span>Enabled</span><span></span></div><div class="sm-rows"></div><button type="button" class="button sm-add">Add tab</button>';
   source.parentNode.insertBefore(editor, source); source.style.display = 'none';
   var rows = editor.querySelector('.sm-rows');
+  var defaultTab = document.getElementById('setting_tab_sub_menu_default_tab');
   function labeled(title, input, cls) { var l=document.createElement('label'),s=document.createElement('span'); s.textContent=title;l.className=cls||'';l.appendChild(s);l.appendChild(input);return l; }
   function text(cls, value, placeholder) { var i=document.createElement('input');i.type='text';i.className=cls;i.value=value||'';i.placeholder=placeholder;return i; }
   function add(values) {
@@ -19,9 +20,26 @@ document.addEventListener('DOMContentLoaded', function () {
     var remove=document.createElement('button');remove.type='button';remove.className='button';remove.textContent='Remove';remove.onclick=function(){row.remove();sync();};
     row.appendChild(labeled('Tab ID (internal)',key));row.appendChild(labeled('Display name',label));row.appendChild(labeled('Forum/Category IDs',forums));row.appendChild(labeled('Enabled',enabled,'sm-enabled'));row.appendChild(remove);rows.appendChild(row);
   }
-  function sync() { var lines=[];rows.querySelectorAll('.sm-row').forEach(function(r){var key=r.querySelector('.sm-key').value.trim().replace(/[^a-z0-9_-]/gi,''),label=r.querySelector('.sm-label').value.trim().replace(/\|/g,''),ids=r.querySelector('.sm-forums').value.split(',').map(function(x){x=parseInt(x.trim(),10);return x>0?x:null;}).filter(function(x){return x!==null;}).join(','),on=r.querySelector('.sm-on').checked?'1':'0';if(key||label||ids)lines.push([key,label,ids,on].join('|'));});source.value=lines.join('\n'); }
+  function updateDefaultOptions() {
+    if (!defaultTab) return;
+    var selected = defaultTab.value;
+    var seen = {};
+    defaultTab.textContent = '';
+    rows.querySelectorAll('.sm-row').forEach(function (row) {
+      var key = row.querySelector('.sm-key').value.trim().replace(/[^a-z0-9_-]/gi, '');
+      var label = row.querySelector('.sm-label').value.trim().replace(/\|/g, '');
+      if (!key || !label || !row.querySelector('.sm-on').checked || seen[key]) return;
+      seen[key] = true;
+      var option = document.createElement('option');
+      option.value = key;
+      option.textContent = label;
+      option.selected = key === selected;
+      defaultTab.appendChild(option);
+    });
+  }
+  function sync() { var lines=[];rows.querySelectorAll('.sm-row').forEach(function(r){var key=r.querySelector('.sm-key').value.trim().replace(/[^a-z0-9_-]/gi,''),label=r.querySelector('.sm-label').value.trim().replace(/\|/g,''),ids=r.querySelector('.sm-forums').value.split(',').map(function(x){x=parseInt(x.trim(),10);return x>0?x:null;}).filter(function(x){return x!==null;}).join(','),on=r.querySelector('.sm-on').checked?'1':'0';if(key||label||ids)lines.push([key,label,ids,on].join('|'));});source.value=lines.join('\n');updateDefaultOptions(); }
   source.value.split(/\r?\n/).forEach(function(line){line=line.trim();if(line&&line.charAt(0)!=='#')add(line.split('|').map(function(x){return x.trim();}));});
-  if (!rows.children.length) add(); editor.querySelector('.sm-add').onclick=function(){add();};editor.addEventListener('input',sync);editor.addEventListener('change',sync);if(source.form)source.form.addEventListener('submit',sync);
+  if (!rows.children.length) add(); updateDefaultOptions();editor.querySelector('.sm-add').onclick=function(){add();sync();};editor.addEventListener('input',sync);editor.addEventListener('change',sync);if(source.form)source.form.addEventListener('submit',sync);
 });
 }());
 

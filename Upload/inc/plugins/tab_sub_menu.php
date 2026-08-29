@@ -21,7 +21,7 @@ function tab_sub_menu_info()
         'author' => 'SickProdigy',
         'authorsite' => 'https://www.sickgaming.net',
         'license' => 'GPL-3.0-or-later',
-        'version' => '0.5.8',
+        'version' => '0.5.10',
         'compatibility' => '18*'
     );
 }
@@ -55,7 +55,7 @@ function tab_sub_menu_ensure_settings()
         $existing = $db->fetch_array($query);
 
         if (empty($existing['sid'])) {
-            $db->insert_query('settings', $setting);
+            $db->insert_query('settings', tab_sub_menu_escape_setting($setting));
         } else {
             // Keep the administrator's value, but refresh plugin-owned metadata on upgrade.
             $sid = (int)$existing['sid'];
@@ -71,11 +71,24 @@ function tab_sub_menu_ensure_settings()
             } else {
                 unset($setting["value"]);
             }
-            $db->update_query('settings', $setting, "sid='{$sid}'", 1);
+            $db->update_query('settings', tab_sub_menu_escape_setting($setting), "sid='{$sid}'", 1);
         }
     }
 
     tab_sub_menu_rebuild_settings();
+}
+
+function tab_sub_menu_escape_setting($setting)
+{
+    global $db;
+
+    foreach (array('name', 'title', 'description', 'optionscode', 'value') as $field) {
+        if (isset($setting[$field])) {
+            $setting[$field] = $db->escape_string((string)$setting[$field]);
+        }
+    }
+
+    return $setting;
 }
 
 function tab_sub_menu_settings($gid)
@@ -100,15 +113,67 @@ function tab_sub_menu_settings($gid)
             'gid' => $gid
         ),
         array(
+            'name' => 'tab_sub_menu_default_tab',
+            'title' => 'Default Tab',
+            'description' => 'Tab selected when no valid remembered selection is available. Only enabled configured tabs are offered.',
+            'optionscode' => tab_sub_menu_default_tab_optionscode(),
+            'value' => 'home',
+            'disporder' => 3,
+            'gid' => $gid
+        ),
+        array(
+            'name' => 'tab_sub_menu_remember_selection',
+            'title' => 'Remember Visitor Selection',
+            'description' => 'Remember each visitor\'s selected tab in installation-scoped browser storage.',
+            'optionscode' => 'yesno',
+            'value' => '1',
+            'disporder' => 4,
+            'gid' => $gid
+        ),
+        array(
+            'name' => 'tab_sub_menu_url_state',
+            'title' => 'Enable Shareable Tab URLs',
+            'description' => 'Store the active tab in the tsm_tab URL parameter so links are shareable and browser Back/Forward navigation follows tab changes.',
+            'optionscode' => 'yesno',
+            'value' => '1',
+            'disporder' => 5,
+            'gid' => $gid
+        ),
+        array(
             'name' => 'tab_sub_menu_custom_css',
             'title' => 'Custom Menu CSS',
             'description' => 'Optional CSS added after the maintained plugin stylesheet. Useful selectors: #forum-tab-sub-menu, .tab-sub-menu li, .tab-sub-menu li.active, and .tab-sub-menu li:hover:not(.active).',
             'optionscode' => 'textarea',
             'value' => '',
-            'disporder' => 3,
+            'disporder' => 6,
             'gid' => $gid
         )
     );
+}
+
+function tab_sub_menu_default_tab_optionscode()
+{
+    global $db;
+
+    $query = $db->simple_select(
+        'settings',
+        'value',
+        "name='" . $db->escape_string('tab_sub_menu_groups') . "'",
+        array('limit' => 1)
+    );
+    $groups_value = $db->fetch_field($query, 'value');
+    $groups = tab_sub_menu_parse_menu_groups($groups_value);
+    if (empty($groups)) {
+        $groups = tab_sub_menu_default_menu_groups();
+    }
+
+    $options = array('select');
+    foreach ($groups as $group) {
+        $label = str_replace(array("\r", "\n"), ' ', (string)$group['label']);
+        $options[] = $group['key'] . '=' . $label;
+    }
+
+    return implode("\n", $options);
 }
 
 function tab_sub_menu_is_installed()
@@ -195,6 +260,10 @@ function tab_sub_menu_stylesheet()
 #forum-tab-sub-menu {
     margin: 20px 0 30px;
     text-align: center;
+}
+
+html.tab-sub-menu-initializing body {
+    visibility: hidden;
 }
 
 .tab-sub-menu {
@@ -456,7 +525,7 @@ function tab_sub_menu_admin_settings_editor()
     $base = rtrim($mybb->asset_url, "/") . "/jscripts/tab-sub-menu/";
     $page->extra_header .= "<script>window.tabSubMenuCategories = " . $json . ";</script>";
     $page->extra_header .= "<script>window.tabSubMenuMaintainedCss = " . $stylesheet_json . ";</script>";
-    $page->extra_header .= '<script type="text/javascript" src="' . htmlspecialchars_uni($base . "tab-sub-menu-admin-settings.js?ver=053") . '"></script>';
+    $page->extra_header .= '<script type="text/javascript" src="' . htmlspecialchars_uni($base . "tab-sub-menu-admin-settings.js?ver=059") . '"></script>';
 }
 
 $plugins->add_hook('global_start', 'tab_sub_menu_menu_output');
@@ -479,8 +548,23 @@ function tab_sub_menu_menu_output()
     }
 
     $asset_url = rtrim($mybb->asset_url, '/');
-    $script_url = $asset_url . '/jscripts/tab-sub-menu/tab-sub-menu.js?ver=058';
+    $script_url = $asset_url . '/jscripts/tab-sub-menu/tab-sub-menu.js?ver=0510';
     $hide_empty_tabs = !empty($mybb->settings['tab_sub_menu_hide_empty_tabs']) ? 'true' : 'false';
+    $default_tab = isset($mybb->settings['tab_sub_menu_default_tab'])
+        ? preg_replace('/[^a-z0-9_-]/i', '', (string)$mybb->settings['tab_sub_menu_default_tab'])
+        : 'home';
+    $default_tab_json = json_encode($default_tab);
+    if ($default_tab_json === false) {
+        $default_tab_json = '"home"';
+    }
+    $remember_selection = !isset($mybb->settings['tab_sub_menu_remember_selection'])
+        || !empty($mybb->settings['tab_sub_menu_remember_selection'])
+        ? 'true'
+        : 'false';
+    $url_state = !isset($mybb->settings['tab_sub_menu_url_state'])
+        || !empty($mybb->settings['tab_sub_menu_url_state'])
+        ? 'true'
+        : 'false';
     $board_url = isset($mybb->settings['bburl']) ? (string)$mybb->settings['bburl'] : '';
     $storage_key_json = json_encode(tab_sub_menu_storage_key($board_url));
     if ($storage_key_json === false) {
@@ -493,10 +577,18 @@ function tab_sub_menu_menu_output()
     $custom_style = $custom_css !== ''
         ? '<style type="text/css" id="tab-sub-menu-custom-css">' . str_ireplace('</style', '<\/style', $custom_css) . '</style>'
         : '';
+    $initialization_script = defined('THIS_SCRIPT') && THIS_SCRIPT === 'index.php'
+        ? '<script type="text/javascript">(function(w,d){d.documentElement.classList.add("tab-sub-menu-initializing");'
+            . 'function reveal(){d.documentElement.classList.remove("tab-sub-menu-initializing");}'
+            . 'w.addEventListener("load",reveal);w.setTimeout(reveal,10000);}(window,document));</script>'
+        : '';
 
-    $tab_sub_menu_assets = $custom_style
+    $tab_sub_menu_assets = $custom_style . $initialization_script
         . '<script type="text/javascript">window.tabSubMenuGroups = ' . $json
         . '; window.tabSubMenuHideEmptyTabs = ' . $hide_empty_tabs
+        . '; window.tabSubMenuDefaultTab = ' . $default_tab_json
+        . '; window.tabSubMenuRememberSelection = ' . $remember_selection
+        . '; window.tabSubMenuUrlState = ' . $url_state
         . '; window.tabSubMenuStorageKey = ' . $storage_key_json . ';</script>'
         . '<script type="text/javascript" src="' . htmlspecialchars_uni($script_url) . '"></script>';
 
