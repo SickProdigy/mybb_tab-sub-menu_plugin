@@ -19,6 +19,7 @@ groups of forums from the board index.
 - Flash-resistant initialization with a no-JavaScript and script-failure fallback.
 - Provides keyboard-operable tab controls with visible focus and selected-state announcements.
 - Optionally hides tabs that have no categories rendered for the current visitor.
+- Includes English, Spanish, French, and Simplified Chinese front-end and Admin CP language files.
 
 ## Install
 
@@ -26,6 +27,8 @@ Copy the contents of `Upload/` into the MyBB installation root:
 
 ```text
 Upload/inc/plugins/tab_sub_menu.php -> public_html/inc/plugins/tab_sub_menu.php
+Upload/inc/languages/english/tab_sub_menu.lang.php -> public_html/inc/languages/english/tab_sub_menu.lang.php
+Upload/inc/languages/english/admin/tab_sub_menu.lang.php -> public_html/inc/languages/english/admin/tab_sub_menu.lang.php
 Upload/jscripts/tab-sub-menu/tab-sub-menu.js -> public_html/jscripts/tab-sub-menu/tab-sub-menu.js
 ```
 
@@ -92,6 +95,14 @@ Initial configuration:
 ```text
 home|Home||1
 ```
+
+### Translations
+
+English, Spanish, French, and Simplified Chinese front-end and Admin CP language files are bundled under `Upload/inc/languages/english/`, `spanish/`, `french/`, and `chinese/`. MyBB loads plugin translations from the directory used by the installed language pack. If a pack uses a different directory name, copy the corresponding front-end file and `admin/` file into that directory.
+
+To translate the plugin into another language, copy both English files into the matching MyBB language directory and translate the values while preserving their keys and placeholders such as `{1}` and `%1$s`. Missing files fall back through MyBB's configured fallback language, and missing individual phrases use the bundled English defaults in the plugin.
+
+Saved Display names are administrator configuration rather than interface phrases, so installing or changing a language does not rewrite existing tab labels.
 
 ### Custom CSS
 

@@ -12,13 +12,28 @@ if (!defined('IN_MYBB')) {
     die('Direct initialization of this file is not allowed.');
 }
 
-define('TAB_SUB_MENU_VERSION', '0.5.11');
+define('TAB_SUB_MENU_VERSION', '0.5.12');
+
+function tab_sub_menu_language($key, $fallback)
+{
+    global $lang;
+
+    static $loaded = false;
+    if (!$loaded && is_object($lang) && method_exists($lang, 'load')) {
+        $lang->load('tab_sub_menu', true);
+        $loaded = true;
+    }
+
+    return $loaded && isset($lang->{$key}) && $lang->{$key} !== ''
+        ? $lang->{$key}
+        : $fallback;
+}
 
 function tab_sub_menu_info()
 {
     return array(
-        'name' => 'Tab Sub Menu',
-        'description' => 'Organizes forum categories into configurable tabs for easier navigation.',
+        'name' => tab_sub_menu_language('tab_sub_menu_plugin_name', 'Tab Sub Menu'),
+        'description' => tab_sub_menu_language('tab_sub_menu_plugin_description', 'Organizes forum categories into configurable tabs for easier navigation.'),
         'website' => 'https://www.sickgaming.net',
         'author' => 'SickProdigy',
         'authorsite' => 'https://www.sickgaming.net',
@@ -45,8 +60,8 @@ function tab_sub_menu_ensure_settings()
     } else {
         $gid = (int)$db->insert_query('settinggroups', array(
             'name' => 'tab_sub_menu',
-            'title' => 'Tab Sub Menu',
-            'description' => 'Settings for the Tab Sub Menu forum menu.',
+            'title' => tab_sub_menu_language('tab_sub_menu_setting_group_title', 'Tab Sub Menu'),
+            'description' => tab_sub_menu_language('tab_sub_menu_setting_group_description', 'Settings for the Tab Sub Menu forum menu.'),
             'disporder' => 1,
             'isdefault' => 0
         ));
@@ -98,8 +113,8 @@ function tab_sub_menu_settings($gid)
     return array(
         array(
             'name' => 'tab_sub_menu_groups',
-            'title' => 'Forum Category Menu Groups',
-            'description' => 'Add one row for each menu tab. The Tab ID is an internal, unique name; the Display name is what visitors see; Forum/Category IDs are the IDs shown by that tab.',
+            'title' => tab_sub_menu_language('tab_sub_menu_setting_groups_title', 'Forum Category Menu Groups'),
+            'description' => tab_sub_menu_language('tab_sub_menu_setting_groups_description', 'Add one row for each menu tab. The Tab ID is an internal, unique name; the Display name is what visitors see; Forum/Category IDs are the IDs shown by that tab.'),
             'optionscode' => 'textarea',
             'value' => tab_sub_menu_initial_setting(),
             'disporder' => 1,
@@ -107,8 +122,8 @@ function tab_sub_menu_settings($gid)
         ),
         array(
             'name' => 'tab_sub_menu_hide_empty_tabs',
-            'title' => 'Hide Empty Tabs',
-            'description' => 'Hide tabs whose configured categories are not present in the forum index rendered for the current visitor. Show-all tabs remain available.',
+            'title' => tab_sub_menu_language('tab_sub_menu_setting_hide_empty_title', 'Hide Empty Tabs'),
+            'description' => tab_sub_menu_language('tab_sub_menu_setting_hide_empty_description', 'Hide tabs whose configured categories are not present in the forum index rendered for the current visitor. Show-all tabs remain available.'),
             'optionscode' => 'yesno',
             'value' => '1',
             'disporder' => 2,
@@ -116,8 +131,8 @@ function tab_sub_menu_settings($gid)
         ),
         array(
             'name' => 'tab_sub_menu_default_tab',
-            'title' => 'Default Tab',
-            'description' => 'Tab selected when no valid remembered selection is available. Only enabled configured tabs are offered.',
+            'title' => tab_sub_menu_language('tab_sub_menu_setting_default_tab_title', 'Default Tab'),
+            'description' => tab_sub_menu_language('tab_sub_menu_setting_default_tab_description', 'Tab selected when no valid remembered selection is available. Only enabled configured tabs are offered.'),
             'optionscode' => tab_sub_menu_default_tab_optionscode(),
             'value' => 'home',
             'disporder' => 3,
@@ -125,8 +140,8 @@ function tab_sub_menu_settings($gid)
         ),
         array(
             'name' => 'tab_sub_menu_remember_selection',
-            'title' => 'Remember Visitor Selection',
-            'description' => 'Remember each visitor\'s selected tab in installation-scoped browser storage.',
+            'title' => tab_sub_menu_language('tab_sub_menu_setting_remember_title', 'Remember Visitor Selection'),
+            'description' => tab_sub_menu_language('tab_sub_menu_setting_remember_description', 'Remember each visitor\'s selected tab in installation-scoped browser storage.'),
             'optionscode' => 'yesno',
             'value' => '1',
             'disporder' => 4,
@@ -134,8 +149,8 @@ function tab_sub_menu_settings($gid)
         ),
         array(
             'name' => 'tab_sub_menu_url_state',
-            'title' => 'Enable Shareable Tab URLs',
-            'description' => 'Store the active tab in the tsm_tab URL parameter so links are shareable and browser Back/Forward navigation follows tab changes.',
+            'title' => tab_sub_menu_language('tab_sub_menu_setting_url_state_title', 'Enable Shareable Tab URLs'),
+            'description' => tab_sub_menu_language('tab_sub_menu_setting_url_state_description', 'Store the active tab in the tsm_tab URL parameter so links are shareable and browser Back/Forward navigation follows tab changes.'),
             'optionscode' => 'yesno',
             'value' => '1',
             'disporder' => 5,
@@ -143,8 +158,8 @@ function tab_sub_menu_settings($gid)
         ),
         array(
             'name' => 'tab_sub_menu_custom_css',
-            'title' => 'Custom Menu CSS',
-            'description' => 'Optional CSS added after the maintained plugin stylesheet. Useful selectors: #forum-tab-sub-menu, .tab-sub-menu li, .tab-sub-menu li.active, and .tab-sub-menu li:hover:not(.active).',
+            'title' => tab_sub_menu_language('tab_sub_menu_setting_custom_css_title', 'Custom Menu CSS'),
+            'description' => tab_sub_menu_language('tab_sub_menu_setting_custom_css_description', 'Optional CSS added after the maintained plugin stylesheet. Useful selectors: #forum-tab-sub-menu, .tab-sub-menu li, .tab-sub-menu li.active, and .tab-sub-menu li:hover:not(.active).'),
             'optionscode' => 'textarea',
             'value' => '',
             'disporder' => 6,
@@ -241,11 +256,11 @@ function tab_sub_menu_run_upgrade($from_version)
     tab_sub_menu_ensure_settings();
 
     if (!tab_sub_menu_sync_stylesheets()) {
-        throw new RuntimeException('Unable to load MyBB theme functions or synchronize plugin stylesheets.');
+        throw new RuntimeException(tab_sub_menu_language('tab_sub_menu_upgrade_stylesheet_error', 'Unable to load MyBB theme functions or synchronize plugin stylesheets.'));
     }
 
     if (!tab_sub_menu_sync_template_variables()) {
-        throw new RuntimeException('Unable to synchronize plugin template variables.');
+        throw new RuntimeException(tab_sub_menu_language('tab_sub_menu_upgrade_template_error', 'Unable to synchronize plugin template variables.'));
     }
 }
 
@@ -279,8 +294,11 @@ function tab_sub_menu_attempt_upgrade($force = false)
 
 function tab_sub_menu_report_upgrade_error($message)
 {
-    $message = 'Tab Sub Menu could not upgrade to version ' . TAB_SUB_MENU_VERSION . ': ' . $message
-        . ' The upgrade remains pending and will be retried on the next Admin CP request.';
+    $format = tab_sub_menu_language(
+        'tab_sub_menu_upgrade_error',
+        'Tab Sub Menu could not upgrade to version %1$s: %2$s The upgrade remains pending and will be retried on the next Admin CP request.'
+    );
+    $message = sprintf($format, TAB_SUB_MENU_VERSION, $message);
 
     if (function_exists('flash_message')) {
         flash_message($message, 'error');
@@ -631,10 +649,50 @@ function tab_sub_menu_admin_settings_editor()
     if ($stylesheet_json === false) { $stylesheet_json = '""'; }
     $stylesheet_json = str_replace(array("<", ">", "&"), array("\u003C", "\u003E", "\u0026"), $stylesheet_json);
 
+    $language_json = json_encode(tab_sub_menu_admin_javascript_language());
+    if ($language_json === false) { $language_json = '{}'; }
+    $language_json = str_replace(array("<", ">", "&"), array("\u003C", "\u003E", "\u0026"), $language_json);
+
     $base = rtrim($mybb->asset_url, "/") . "/jscripts/tab-sub-menu/";
     $page->extra_header .= "<script>window.tabSubMenuCategories = " . $json . ";</script>";
     $page->extra_header .= "<script>window.tabSubMenuMaintainedCss = " . $stylesheet_json . ";</script>";
-    $page->extra_header .= '<script type="text/javascript" src="' . htmlspecialchars_uni($base . "tab-sub-menu-admin-settings.js?ver=059") . '"></script>';
+    $page->extra_header .= "<script>window.tabSubMenuLanguage = " . $language_json . ";</script>";
+    $page->extra_header .= '<script type="text/javascript" src="' . htmlspecialchars_uni($base . "tab-sub-menu-admin-settings.js?ver=0512") . '"></script>';
+}
+
+function tab_sub_menu_admin_javascript_language()
+{
+    $phrases = array(
+        'editorHelp' => array('tab_sub_menu_editor_help', 'Use a short, unique Tab ID such as <code>gaming</code>. Enter Forum/Category IDs separated by commas, such as <code>2,3,4</code>. Leave the IDs empty for a “show all” tab.'),
+        'tabId' => array('tab_sub_menu_editor_tab_id', 'Tab ID (internal)'),
+        'tabIdExample' => array('tab_sub_menu_editor_tab_id_example', 'gaming'),
+        'displayName' => array('tab_sub_menu_editor_display_name', 'Display name'),
+        'displayNameExample' => array('tab_sub_menu_editor_display_name_example', 'Gaming'),
+        'forumIds' => array('tab_sub_menu_editor_forum_ids', 'Forum/Category IDs'),
+        'forumIdsExample' => array('tab_sub_menu_editor_forum_ids_example', '2,3,4'),
+        'enabled' => array('tab_sub_menu_editor_enabled', 'Enabled'),
+        'addTab' => array('tab_sub_menu_editor_add_tab', 'Add tab'),
+        'remove' => array('tab_sub_menu_editor_remove', 'Remove'),
+        'unnamedTab' => array('tab_sub_menu_editor_unnamed_tab', 'Unnamed tab'),
+        'missing' => array('tab_sub_menu_editor_missing', 'Missing: {1}'),
+        'allAssigned' => array('tab_sub_menu_editor_all_assigned', 'All top-level categories assigned.'),
+        'categoriesUnavailable' => array('tab_sub_menu_editor_categories_unavailable', 'Category list unavailable; enter IDs manually.'),
+        'select' => array('tab_sub_menu_editor_select', 'Select'),
+        'usedBy' => array('tab_sub_menu_editor_used_by', 'used by {1}'),
+        'missingMarker' => array('tab_sub_menu_editor_missing_marker', 'missing'),
+        'categoryPrompt' => array('tab_sub_menu_editor_category_prompt', "Top-level categories:\n\n{1}\n\nEnter IDs to add:"),
+        'viewCss' => array('tab_sub_menu_editor_view_css', 'View maintained default CSS'),
+        'cssWarning' => array('tab_sub_menu_editor_css_warning', 'Custom CSS loads after this maintained stylesheet. Copy only when you want a full editable starting point; copied rules can override future plugin style updates.'),
+        'copyCss' => array('tab_sub_menu_editor_copy_css', 'Copy defaults to Custom Menu CSS'),
+        'replaceCss' => array('tab_sub_menu_editor_replace_css', 'Replace your existing Custom Menu CSS with the maintained defaults?')
+    );
+    $strings = array();
+
+    foreach ($phrases as $key => $phrase) {
+        $strings[$key] = tab_sub_menu_language($phrase[0], $phrase[1]);
+    }
+
+    return $strings;
 }
 
 $plugins->add_hook('global_start', 'tab_sub_menu_menu_output');
@@ -787,7 +845,7 @@ function tab_sub_menu_parse_forum_ids($value)
 function tab_sub_menu_default_menu_groups()
 {
     return array(
-        array('key' => 'home', 'label' => 'Home', 'forum_ids' => array())
+        array('key' => 'home', 'label' => tab_sub_menu_language('tab_sub_menu_default_home', 'Home'), 'forum_ids' => array())
     );
 }
 
@@ -810,7 +868,9 @@ function tab_sub_menu_default_menu_setting()
 
 function tab_sub_menu_build_tab_sub_menu($groups)
 {
-    $html = '<div id="forum-tab-sub-menu"><ul class="tab-sub-menu" role="tablist" aria-label="Forum categories">';
+    $aria_label = tab_sub_menu_language('tab_sub_menu_aria_forum_categories', 'Forum categories');
+    $html = '<div id="forum-tab-sub-menu"><ul class="tab-sub-menu" role="tablist" aria-label="'
+        . htmlspecialchars_uni($aria_label) . '">';
     $first = true;
 
     foreach ($groups as $key => $label) {
