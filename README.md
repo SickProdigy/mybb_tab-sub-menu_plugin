@@ -33,7 +33,9 @@ Then install and activate `Tab Sub Menu` under Admin CP → Configuration → Pl
 
 ## Upgrade
 
-Replace the plugin files, then deactivate and reactivate **Tab Sub Menu**. Reactivation refreshes the plugin-owned stylesheet and MyBB theme caches. Version 0.5.1 also removes the untouched legacy default from **Custom Menu CSS** so it cannot override maintained responsive rules; administrator-authored custom CSS is preserved.
+Replace the plugin files, then visit any Admin CP page. The plugin detects a newer file version and runs pending setting migrations, template synchronization, stylesheet refreshes, and theme cache rebuilds once for that version. Deactivation and reactivation remain supported but are no longer required for routine upgrades.
+
+The installed version and last upgrade error are stored in MyBB's data cache. A failed upgrade is not marked complete, is written to the PHP error log, displays an Admin CP error, and retries on the next administrative request. Administrator settings and genuine custom CSS are preserved. Version 0.5.1 also removes the untouched legacy default from **Custom Menu CSS** so it cannot override maintained responsive rules.
 
 ## Theme Integration
 

@@ -12,6 +12,8 @@ if (!defined('IN_MYBB')) {
     die('Direct initialization of this file is not allowed.');
 }
 
+define('TAB_SUB_MENU_VERSION', '0.5.11');
+
 function tab_sub_menu_info()
 {
     return array(
@@ -21,7 +23,7 @@ function tab_sub_menu_info()
         'author' => 'SickProdigy',
         'authorsite' => 'https://www.sickgaming.net',
         'license' => 'GPL-3.0-or-later',
-        'version' => '0.5.10',
+        'version' => TAB_SUB_MENU_VERSION,
         'compatibility' => '18*'
     );
 }
@@ -189,7 +191,7 @@ function tab_sub_menu_is_installed()
 function tab_sub_menu_uninstall()
 {
     tab_sub_menu_remove_stylesheets();
-    global $db;
+    global $db, $cache;
 
     $query = $db->simple_select('settinggroups', 'gid', "name='" . $db->escape_string('tab_sub_menu') . "'");
     $group = $db->fetch_array($query);
@@ -199,19 +201,126 @@ function tab_sub_menu_uninstall()
         $db->delete_query('settings', "gid='{$gid}'");
         tab_sub_menu_rebuild_settings();
     }
+
+    $cache->delete('tab_sub_menu');
 }
 
 function tab_sub_menu_activate()
 {
-    tab_sub_menu_ensure_settings();
-    tab_sub_menu_sync_stylesheets();
+    tab_sub_menu_attempt_upgrade(true);
+}
 
-    tab_sub_menu_sync_template_variables();
+function tab_sub_menu_upgrade_state()
+{
+    global $cache;
+
+    $state = $cache->read('tab_sub_menu');
+    if (!is_array($state)) {
+        $state = array();
+    }
+
+    return array_merge(array(
+        'version' => '0.0.0',
+        'upgrading_to' => '',
+        'attempted_at' => 0,
+        'last_error' => ''
+    ), $state);
+}
+
+function tab_sub_menu_store_upgrade_state($state)
+{
+    global $cache;
+
+    $cache->update('tab_sub_menu', $state);
+}
+
+function tab_sub_menu_run_upgrade($from_version)
+{
+    // Version-specific migrations can be added here while the shared sync
+    // remains safe to run again after an interrupted upgrade.
+    tab_sub_menu_ensure_settings();
+
+    if (!tab_sub_menu_sync_stylesheets()) {
+        throw new RuntimeException('Unable to load MyBB theme functions or synchronize plugin stylesheets.');
+    }
+
+    if (!tab_sub_menu_sync_template_variables()) {
+        throw new RuntimeException('Unable to synchronize plugin template variables.');
+    }
+}
+
+function tab_sub_menu_attempt_upgrade($force = false)
+{
+    $state = tab_sub_menu_upgrade_state();
+    if (!$force && version_compare($state['version'], TAB_SUB_MENU_VERSION, '>=')) {
+        return true;
+    }
+
+    $state['upgrading_to'] = TAB_SUB_MENU_VERSION;
+    $state['attempted_at'] = TIME_NOW;
+    $state['last_error'] = '';
+    tab_sub_menu_store_upgrade_state($state);
+
+    try {
+        tab_sub_menu_run_upgrade($state['version']);
+        $state['version'] = TAB_SUB_MENU_VERSION;
+        $state['upgrading_to'] = '';
+        $state['last_error'] = '';
+        tab_sub_menu_store_upgrade_state($state);
+        return true;
+    } catch (Exception $exception) {
+        $state['upgrading_to'] = '';
+        $state['last_error'] = $exception->getMessage();
+        tab_sub_menu_store_upgrade_state($state);
+        tab_sub_menu_report_upgrade_error($exception->getMessage());
+        return false;
+    }
+}
+
+function tab_sub_menu_report_upgrade_error($message)
+{
+    $message = 'Tab Sub Menu could not upgrade to version ' . TAB_SUB_MENU_VERSION . ': ' . $message
+        . ' The upgrade remains pending and will be retried on the next Admin CP request.';
+
+    if (function_exists('flash_message')) {
+        flash_message($message, 'error');
+    }
+
+    error_log($message);
+}
+
+function tab_sub_menu_maybe_upgrade()
+{
+    static $checked = false;
+    if ($checked) {
+        return;
+    }
+    $checked = true;
+
+    $state = tab_sub_menu_upgrade_state();
+    if (version_compare($state['version'], TAB_SUB_MENU_VERSION, '>=')) {
+        return;
+    }
+
+    // Avoid repeating cache rebuilds when two Admin CP requests overlap. If a
+    // request dies mid-upgrade, the short lease expires and the next one retries.
+    if ($state['upgrading_to'] === TAB_SUB_MENU_VERSION
+        && (int)$state['attempted_at'] > TIME_NOW - 300) {
+        return;
+    }
+
+    tab_sub_menu_attempt_upgrade();
+}
+
+if (defined('IN_ADMINCP')) {
+    $plugins->add_hook('admin_load', 'tab_sub_menu_maybe_upgrade');
 }
 
 function tab_sub_menu_sync_template_variables()
 {
-    require_once MYBB_ROOT . 'inc/adminfunctions_templates.php';
+    if (!function_exists('find_replace_templatesets')) {
+        require_once MYBB_ROOT . 'inc/adminfunctions_templates.php';
+    }
 
     find_replace_templatesets(
         'index',
