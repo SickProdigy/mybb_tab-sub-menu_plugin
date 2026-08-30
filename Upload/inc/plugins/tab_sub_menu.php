@@ -12,7 +12,7 @@ if (!defined('IN_MYBB')) {
     die('Direct initialization of this file is not allowed.');
 }
 
-define('TAB_SUB_MENU_VERSION', '0.5.12');
+define('TAB_SUB_MENU_VERSION', '0.5.13');
 
 function tab_sub_menu_language($key, $fallback)
 {
@@ -27,6 +27,11 @@ function tab_sub_menu_language($key, $fallback)
     return $loaded && isset($lang->{$key}) && $lang->{$key} !== ''
         ? $lang->{$key}
         : $fallback;
+}
+
+function tab_sub_menu_asset_version()
+{
+    return preg_replace('/[^0-9]/', '', TAB_SUB_MENU_VERSION);
 }
 
 function tab_sub_menu_info()
@@ -657,7 +662,9 @@ function tab_sub_menu_admin_settings_editor()
     $page->extra_header .= "<script>window.tabSubMenuCategories = " . $json . ";</script>";
     $page->extra_header .= "<script>window.tabSubMenuMaintainedCss = " . $stylesheet_json . ";</script>";
     $page->extra_header .= "<script>window.tabSubMenuLanguage = " . $language_json . ";</script>";
-    $page->extra_header .= '<script type="text/javascript" src="' . htmlspecialchars_uni($base . "tab-sub-menu-admin-settings.js?ver=0512") . '"></script>';
+    $page->extra_header .= '<script type="text/javascript" src="' . htmlspecialchars_uni(
+        $base . 'tab-sub-menu-admin-settings.js?ver=' . tab_sub_menu_asset_version()
+    ) . '"></script>';
 }
 
 function tab_sub_menu_admin_javascript_language()
@@ -715,7 +722,7 @@ function tab_sub_menu_menu_output()
     }
 
     $asset_url = rtrim($mybb->asset_url, '/');
-    $script_url = $asset_url . '/jscripts/tab-sub-menu/tab-sub-menu.js?ver=0510';
+    $script_url = $asset_url . '/jscripts/tab-sub-menu/tab-sub-menu.js?ver=' . tab_sub_menu_asset_version();
     $hide_empty_tabs = !empty($mybb->settings['tab_sub_menu_hide_empty_tabs']) ? 'true' : 'false';
     $default_tab = isset($mybb->settings['tab_sub_menu_default_tab'])
         ? preg_replace('/[^a-z0-9_-]/i', '', (string)$mybb->settings['tab_sub_menu_default_tab'])
