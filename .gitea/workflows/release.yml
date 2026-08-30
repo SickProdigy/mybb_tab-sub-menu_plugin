@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing tag to publish, for example v1.2.3
+        required: true
+        type: string
 
 jobs:
   build:
@@ -11,7 +17,8 @@ jobs:
       contents: read
     uses: ./.gitea/workflows/validate.yml
     with:
-      release_tag: ${{ github.ref_name }}
+      release_tag: ${{ inputs.release_tag || github.ref_name }}
+      checkout_ref: ${{ inputs.release_tag || github.ref_name }}
 
   publish:
     needs: build
@@ -30,7 +37,7 @@ jobs:
           GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}
           GITEA_API_URL: ${{ github.api_url }}
           REPOSITORY: ${{ github.repository }}
-          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
         run: |
           set -euo pipefail
 

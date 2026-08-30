@@ -12,6 +12,10 @@ on:
         description: Optional release tag that must match the plugin version
         required: false
         type: string
+      checkout_ref:
+        description: Optional ref to check out before validating
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -24,6 +28,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.checkout_ref }}
 
       - name: Validate source, translations, and versions
         shell: bash
