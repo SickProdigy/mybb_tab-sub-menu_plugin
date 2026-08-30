@@ -1,0 +1,129 @@
+name: Validate and package
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      release_tag:
+        description: Optional release tag that must match the plugin version
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: web
+    env:
+      RELEASE_TAG_INPUT: ${{ inputs.release_tag }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate source, translations, and versions
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          while IFS= read -r php_file; do
+            php -l "$php_file" >/dev/null
+          done < <(find Upload -type f -name '*.php' | sort)
+
+          while IFS= read -r javascript_file; do
+            node --check "$javascript_file"
+          done < <(find Upload -type f -name '*.js' | sort)
+
+          php <<'PHP'
+          <?php
+          $root = getcwd() . '/Upload/inc/languages';
+          $load = function ($directory) {
+              $result = array();
+              foreach (array('front' => '', 'admin' => 'admin/') as $area => $path) {
+                  $l = array();
+                  require $directory . '/' . $path . 'tab_sub_menu.lang.php';
+                  $result[$area] = $l;
+              }
+              return $result;
+          };
+          $english = $load($root . '/english');
+          foreach (glob($root . '/*', GLOB_ONLYDIR) as $directory) {
+              if (basename($directory) === 'english') {
+                  continue;
+              }
+              $translated = $load($directory);
+              foreach ($english as $area => $phrases) {
+                  if (array_keys($phrases) !== array_keys($translated[$area])) {
+                      fwrite(STDERR, basename($directory) . '/' . $area . ": phrase keys differ from English\n");
+                      exit(1);
+                  }
+                  foreach ($phrases as $key => $value) {
+                      preg_match_all('/\{\d+\}|%\d+\$[a-z]/i', $value, $expected);
+                      preg_match_all('/\{\d+\}|%\d+\$[a-z]/i', $translated[$area][$key], $actual);
+                      sort($expected[0]);
+                      sort($actual[0]);
+                      if ($expected[0] !== $actual[0]) {
+                          fwrite(STDERR, basename($directory) . '/' . $area . ": placeholder mismatch for " . $key . "\n");
+                          exit(1);
+                      }
+                  }
+              }
+          }
+          echo "Language files have matching keys and placeholders.\n";
+          PHP
+
+          plugin_file="Upload/inc/plugins/tab_sub_menu.php"
+          version="$(sed -n "s/^define('TAB_SUB_MENU_VERSION', '\([^']*\)').*/\1/p" "$plugin_file")"
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "TAB_SUB_MENU_VERSION is missing or invalid: $version" >&2
+            exit 1
+          fi
+          if [[ -n "$RELEASE_TAG_INPUT" && "${RELEASE_TAG_INPUT#v}" != "$version" ]]; then
+            echo "Tag $RELEASE_TAG_INPUT does not match plugin version $version." >&2
+            exit 1
+          fi
+          if ! grep -F "## [$version]" CHANGELOG.md >/dev/null; then
+            echo "CHANGELOG.md has no release heading for $version." >&2
+            exit 1
+          fi
+          if grep -R -E '\?ver=[0-9]+' Upload/inc/plugins Upload/jscripts >/dev/null; then
+            echo 'A hardcoded asset cache version was found.' >&2
+            exit 1
+          fi
+          if [[ "$(grep -c 'tab_sub_menu_asset_version()' "$plugin_file")" -lt 3 ]]; then
+            echo 'Both JavaScript URLs must derive their cache version from the plugin version.' >&2
+            exit 1
+          fi
+
+          mkdir -p dist
+          archive="dist/mybb-tab-sub-menu-$version.zip"
+          zip -X -q -r "$archive" Upload README.md LICENSE CHANGELOG.md
+
+          archive_contents="$(unzip -Z1 "$archive")"
+          required_entries=(
+            Upload/inc/plugins/tab_sub_menu.php
+            Upload/jscripts/tab-sub-menu/tab-sub-menu.js
+            Upload/jscripts/tab-sub-menu/tab-sub-menu-admin-settings.js
+            README.md
+            LICENSE
+            CHANGELOG.md
+          )
+          for required_entry in "${required_entries[@]}"; do
+            grep -F -x "$required_entry" <<< "$archive_contents" >/dev/null || {
+              echo "Archive is missing required entry: $required_entry" >&2
+              exit 1
+            }
+          done
+
+          echo "Validation and packaging passed for Tab Sub Menu $version."
+
+      - name: Upload archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: mybb-tab-sub-menu
+          path: dist/*.zip
+          if-no-files-found: error

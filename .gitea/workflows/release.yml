@@ -1,0 +1,101 @@
+name: Publish release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    permissions:
+      contents: read
+    uses: ./.gitea/workflows/validate.yml
+    with:
+      release_tag: ${{ github.ref_name }}
+
+  publish:
+    needs: build
+    runs-on: node-20
+    permissions:
+      contents: write
+    steps:
+      - name: Download validated archive
+        uses: actions/download-artifact@v4
+        with:
+          name: mybb-tab-sub-menu
+          path: dist
+
+      - name: Create Gitea release or replace its archive
+        env:
+          GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}
+          GITEA_API_URL: ${{ github.api_url }}
+          REPOSITORY: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          node --input-type=module <<'JS'
+          import { Blob } from 'node:buffer';
+          import { readFile, readdir } from 'node:fs/promises';
+          import { join } from 'node:path';
+
+          const { GITEA_API_URL, GITEA_TOKEN, RELEASE_TAG, REPOSITORY } = process.env;
+          const repositoryUrl = `${GITEA_API_URL}/repos/${REPOSITORY}`;
+          const headers = {
+            Accept: 'application/json',
+            Authorization: `token ${GITEA_TOKEN}`,
+          };
+
+          async function request(url, options = {}, allowed = []) {
+            const response = await fetch(url, {
+              ...options,
+              headers: { ...headers, ...options.headers },
+            });
+            if (!response.ok && !allowed.includes(response.status)) {
+              throw new Error(`${options.method || 'GET'} ${url} failed (${response.status}): ${await response.text()}`);
+            }
+            return response;
+          }
+
+          let response = await request(
+            `${repositoryUrl}/releases/tags/${encodeURIComponent(RELEASE_TAG)}`,
+            {},
+            [404],
+          );
+          let release;
+          if (response.status === 404) {
+            response = await request(`${repositoryUrl}/releases`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                body: `Automated release for ${RELEASE_TAG}.`,
+                draft: false,
+                name: `Tab Sub Menu ${RELEASE_TAG}`,
+                prerelease: false,
+                tag_name: RELEASE_TAG,
+              }),
+            });
+            release = await response.json();
+          } else {
+            release = await response.json();
+          }
+
+          const archiveName = (await readdir('dist')).find((name) => name.endsWith('.zip'));
+          if (!archiveName) throw new Error('No ZIP archive exists in dist.');
+
+          response = await request(`${repositoryUrl}/releases/${release.id}/assets`);
+          const existing = (await response.json()).find((asset) => asset.name === archiveName);
+          if (existing) {
+            await request(`${repositoryUrl}/releases/${release.id}/assets/${existing.id}`, {
+              method: 'DELETE',
+            });
+          }
+
+          const form = new FormData();
+          form.append('attachment', new Blob([await readFile(join('dist', archiveName))]), archiveName);
+          await request(
+            `${repositoryUrl}/releases/${release.id}/assets?name=${encodeURIComponent(archiveName)}`,
+            { method: 'POST', body: form },
+          );
+          console.log(`Published ${archiveName} to Gitea release ${RELEASE_TAG}.`);
+          JS
