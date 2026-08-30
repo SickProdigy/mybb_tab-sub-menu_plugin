@@ -4,6 +4,10 @@ A responsive tab menu for organizing MyBB 1.8 forum categories into configurable
 
 ![Tab Sub Menu preview](assets/tab-sub-menu-preview.png)
 
+## Screenshots
+
+![Tab Sub Menu Admin CP settings](assets/tab-sub-menu-admincp.png)
+
 ## Features
 
 - Configurable category groups, labels, default tab, and show-all tabs.

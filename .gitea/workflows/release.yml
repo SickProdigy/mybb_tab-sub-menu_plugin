@@ -114,7 +114,7 @@ jobs:
             exit 1
           fi
           release_body="$(awk -v version="$version" '
-            $0 == "## [" version "]" { in_section = 1; next }
+            $0 ~ "^## \\[" version "\\]( |$)" { in_section = 1; next }
             in_section && /^## \[/ { exit }
             in_section { print }
           ' CHANGELOG.md | sed '/./,$!d')"
