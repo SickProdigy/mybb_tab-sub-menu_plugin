@@ -12,97 +12,159 @@ on:
         type: string
 
 jobs:
-  build:
-    permissions:
-      contents: read
-    uses: ./.gitea/workflows/validate.yml
-    with:
-      release_tag: ${{ inputs.release_tag || github.ref_name }}
-      checkout_ref: ${{ inputs.release_tag || github.ref_name }}
-
   publish:
-    needs: build
-    runs-on: node-20
+    runs-on: web
     permissions:
       contents: write
     steps:
-      - name: Download validated archive
-        uses: actions/download-artifact@v4
+      - name: Check out repository
+        uses: actions/checkout@v4
         with:
-          name: mybb-tab-sub-menu
-          path: dist
+          fetch-depth: 0
 
-      - name: Create Gitea release or replace its archive
+      - name: Validate, package, and publish
+        shell: bash
         env:
           GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}
           GITEA_API_URL: ${{ github.api_url }}
           REPOSITORY: ${{ github.repository }}
-          RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
+          INPUT_RELEASE_TAG: ${{ github.event.inputs.release_tag }}
         run: |
           set -euo pipefail
 
-          node --input-type=module <<'JS'
-          import { Blob } from 'node:buffer';
-          import { readFile, readdir } from 'node:fs/promises';
-          import { join } from 'node:path';
+          release_tag="$INPUT_RELEASE_TAG"
+          if [ -z "$release_tag" ]; then
+            release_tag="$GITHUB_REF_NAME"
+          fi
+          if [ -z "$release_tag" ]; then
+            echo "No release tag was provided." >&2
+            exit 1
+          fi
 
-          const { GITEA_API_URL, GITEA_TOKEN, RELEASE_TAG, REPOSITORY } = process.env;
-          const repositoryUrl = `${GITEA_API_URL}/repos/${REPOSITORY}`;
-          const headers = {
-            Accept: 'application/json',
-            Authorization: `token ${GITEA_TOKEN}`,
+          git fetch --tags origin
+          git checkout "$release_tag"
+
+          while IFS= read -r php_file; do
+            php -l "$php_file" >/dev/null
+          done < <(find Upload -type f -name '*.php' | sort)
+
+          while IFS= read -r javascript_file; do
+            node --check "$javascript_file"
+          done < <(find Upload -type f -name '*.js' | sort)
+
+          php <<'PHP'
+          <?php
+          $root = getcwd() . '/Upload/inc/languages';
+          $load = function ($directory) {
+              $result = array();
+              foreach (array('front' => '', 'admin') as $area) {
+                  $path = $area === 'admin' ? 'admin/' : '';
+                  $l = array();
+                  require $directory . '/' . $path . 'tab_sub_menu.lang.php';
+                  $result[$area] = $l;
+              }
+              return $result;
           };
+          $english = $load($root . '/english');
+          foreach (glob($root . '/*', GLOB_ONLYDIR) as $directory) {
+              if (basename($directory) === 'english') {
+                  continue;
+              }
+              $translated = $load($directory);
+              foreach ($english as $area => $phrases) {
+                  if (array_keys($phrases) !== array_keys($translated[$area])) {
+                      fwrite(STDERR, basename($directory) . '/' . $area . ": phrase keys differ from English\n");
+                      exit(1);
+                  }
+                  foreach ($phrases as $key => $value) {
+                      preg_match_all('/\{\d+\}|%\d+\$[a-z]/i', $value, $expected);
+                      preg_match_all('/\{\d+\}|%\d+\$[a-z]/i', $translated[$area][$key], $actual);
+                      sort($expected[0]);
+                      sort($actual[0]);
+                      if ($expected[0] !== $actual[0]) {
+                          fwrite(STDERR, basename($directory) . '/' . $area . ": placeholder mismatch for " . $key . "\n");
+                          exit(1);
+                      }
+                  }
+              }
+          }
+          echo "Language files have matching keys and placeholders.\n";
+          PHP
 
-          async function request(url, options = {}, allowed = []) {
-            const response = await fetch(url, {
-              ...options,
-              headers: { ...headers, ...options.headers },
-            });
-            if (!response.ok && !allowed.includes(response.status)) {
-              throw new Error(`${options.method || 'GET'} ${url} failed (${response.status}): ${await response.text()}`);
+          plugin_file="Upload/inc/plugins/tab_sub_menu.php"
+          version="$(sed -n "s/^define('TAB_SUB_MENU_VERSION', '\([^']*\)').*/\1/p" "$plugin_file")"
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "TAB_SUB_MENU_VERSION is missing or invalid: $version" >&2
+            exit 1
+          fi
+          if [[ "${release_tag#v}" != "$version" ]]; then
+            echo "Tag $release_tag does not match plugin version $version." >&2
+            exit 1
+          fi
+          if ! grep -F "## [$version]" CHANGELOG.md >/dev/null; then
+            echo "CHANGELOG.md has no release heading for $version." >&2
+            exit 1
+          fi
+          if grep -R -E '\?ver=[0-9]+' Upload/inc/plugins Upload/jscripts >/dev/null; then
+            echo 'A hardcoded asset cache version was found.' >&2
+            exit 1
+          fi
+          if [[ "$(grep -c 'tab_sub_menu_asset_version()' "$plugin_file")" -lt 3 ]]; then
+            echo 'Both JavaScript URLs must derive their cache version from the plugin version.' >&2
+            exit 1
+          fi
+
+          mkdir -p dist
+          archive_name="mybb-tab-sub-menu-$version.zip"
+          archive="dist/$archive_name"
+          zip -X -q -r "$archive" Upload README.md LICENSE CHANGELOG.md
+
+          archive_contents="$(unzip -Z1 "$archive")"
+          required_entries=(
+            Upload/inc/plugins/tab_sub_menu.php
+            Upload/jscripts/tab-sub-menu/tab-sub-menu.js
+            Upload/jscripts/tab-sub-menu/tab-sub-menu-admin-settings.js
+            README.md
+            LICENSE
+            CHANGELOG.md
+          )
+          for required_entry in "${required_entries[@]}"; do
+            grep -F -x "$required_entry" <<< "$archive_contents" >/dev/null || {
+              echo "Archive is missing required entry: $required_entry" >&2
+              exit 1
             }
-            return response;
-          }
+          done
 
-          let response = await request(
-            `${repositoryUrl}/releases/tags/${encodeURIComponent(RELEASE_TAG)}`,
-            {},
-            [404],
-          );
-          let release;
-          if (response.status === 404) {
-            response = await request(`${repositoryUrl}/releases`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                body: `Automated release for ${RELEASE_TAG}.`,
-                draft: false,
-                name: `Tab Sub Menu ${RELEASE_TAG}`,
-                prerelease: false,
-                tag_name: RELEASE_TAG,
-              }),
-            });
-            release = await response.json();
-          } else {
-            release = await response.json();
-          }
+          if [ -z "$GITEA_TOKEN" ]; then
+            echo "GITEA_TOKEN secret is required to publish the release." >&2
+            exit 1
+          fi
 
-          const archiveName = (await readdir('dist')).find((name) => name.endsWith('.zip'));
-          if (!archiveName) throw new Error('No ZIP archive exists in dist.');
+          api_base="$GITEA_API_URL/repos/$REPOSITORY"
+          release_json="$(curl -fsS -H "Authorization: token $GITEA_TOKEN" "$api_base/releases/tags/$release_tag" || true)"
+          if [ -z "$release_json" ]; then
+            release_json="$(jq -n \
+              --arg tag "$release_tag" \
+              --arg title "Tab Sub Menu $release_tag" \
+              --arg body "Automated release for $release_tag." \
+              '{tag_name:$tag,name:$title,body:$body,draft:false,prerelease:false}' |
+              curl -fsS -X POST \
+                -H "Authorization: token $GITEA_TOKEN" \
+                -H "Content-Type: application/json" \
+                -d @- \
+                "$api_base/releases")"
+          fi
 
-          response = await request(`${repositoryUrl}/releases/${release.id}/assets`);
-          const existing = (await response.json()).find((asset) => asset.name === archiveName);
-          if (existing) {
-            await request(`${repositoryUrl}/releases/${release.id}/assets/${existing.id}`, {
-              method: 'DELETE',
-            });
-          }
+          release_id="$(echo "$release_json" | jq -r '.id')"
+          assets="$(curl -fsS -H "Authorization: token $GITEA_TOKEN" "$api_base/releases/$release_id/assets")"
+          existing_ids="$(echo "$assets" | jq -r --arg asset "$archive_name" '.[] | select(.name == $asset) | .id')"
+          for existing_id in $existing_ids; do
+            curl -fsS -X DELETE -H "Authorization: token $GITEA_TOKEN" "$api_base/releases/$release_id/assets/$existing_id" >/dev/null
+          done
 
-          const form = new FormData();
-          form.append('attachment', new Blob([await readFile(join('dist', archiveName))]), archiveName);
-          await request(
-            `${repositoryUrl}/releases/${release.id}/assets?name=${encodeURIComponent(archiveName)}`,
-            { method: 'POST', body: form },
-          );
-          console.log(`Published ${archiveName} to Gitea release ${RELEASE_TAG}.`);
-          JS
+          curl -fsS -X POST \
+            -H "Authorization: token $GITEA_TOKEN" \
+            -F "attachment=@$archive" \
+            "$api_base/releases/$release_id/assets?name=$archive_name" >/dev/null
+
+          echo "Published $archive_name to Gitea release $release_tag."
