@@ -25,7 +25,7 @@ jobs:
       - name: Validate, package, and publish
         shell: bash
         env:
-          GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}
+          GITEA_TOKEN: ${{ secrets.GITEA_TOKEN || github.token }}
           GITEA_API_URL: ${{ github.api_url }}
           REPOSITORY: ${{ github.repository }}
           INPUT_RELEASE_TAG: ${{ github.event.inputs.release_tag }}
@@ -136,7 +136,7 @@ jobs:
           done
 
           if [ -z "$GITEA_TOKEN" ]; then
-            echo "GITEA_TOKEN secret is required to publish the release." >&2
+            echo "No workflow token is available to publish the release." >&2
             exit 1
           fi
 
