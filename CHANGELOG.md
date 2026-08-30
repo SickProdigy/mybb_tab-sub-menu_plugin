@@ -2,6 +2,20 @@
 
 All notable changes to Tab Sub Menu are documented here.
 
+## [1.0.0] - 2026-08-30
+
+### Added
+
+- Gitea Actions validation and release workflows for self-hosted package checks and release publishing.
+
+### Changed
+
+- Promoted the plugin to the first stable release after the automated packaging, compatibility, and upgrade baseline work.
+
+### Breaking changes
+
+- None.
+
 ## [0.5.13] - 2026-08-29
 
 ### Added

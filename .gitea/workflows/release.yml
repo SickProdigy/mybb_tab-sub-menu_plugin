@@ -113,6 +113,14 @@ jobs:
             echo 'Both JavaScript URLs must derive their cache version from the plugin version.' >&2
             exit 1
           fi
+          release_body="$(awk -v version="$version" '
+            $0 == "## [" version "]" { in_section = 1; next }
+            in_section && /^## \[/ { exit }
+            in_section { print }
+          ' CHANGELOG.md | sed '/./,$!d')"
+          if [ -z "$release_body" ]; then
+            release_body="Automated release for $release_tag."
+          fi
 
           mkdir -p dist
           archive_name="mybb-tab-sub-menu-$version.zip"
@@ -146,13 +154,24 @@ jobs:
             release_json="$(jq -n \
               --arg tag "$release_tag" \
               --arg title "Tab Sub Menu $release_tag" \
-              --arg body "Automated release for $release_tag." \
+              --arg body "$release_body" \
               '{tag_name:$tag,name:$title,body:$body,draft:false,prerelease:false}' |
               curl -fsS -X POST \
                 -H "Authorization: token $GITEA_TOKEN" \
                 -H "Content-Type: application/json" \
                 -d @- \
                 "$api_base/releases")"
+          else
+            release_id="$(echo "$release_json" | jq -r '.id')"
+            release_json="$(jq -n \
+              --arg title "Tab Sub Menu $release_tag" \
+              --arg body "$release_body" \
+              '{name:$title,body:$body,draft:false,prerelease:false}' |
+              curl -fsS -X PATCH \
+                -H "Authorization: token $GITEA_TOKEN" \
+                -H "Content-Type: application/json" \
+                -d @- \
+                "$api_base/releases/$release_id")"
           fi
 
           release_id="$(echo "$release_json" | jq -r '.id')"

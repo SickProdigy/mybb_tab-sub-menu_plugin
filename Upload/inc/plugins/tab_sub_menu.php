@@ -12,7 +12,7 @@ if (!defined('IN_MYBB')) {
     die('Direct initialization of this file is not allowed.');
 }
 
-define('TAB_SUB_MENU_VERSION', '0.5.13');
+define('TAB_SUB_MENU_VERSION', '1.0.0');
 
 function tab_sub_menu_language($key, $fallback)
 {
