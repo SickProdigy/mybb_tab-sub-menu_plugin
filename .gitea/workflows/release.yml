@@ -41,7 +41,7 @@ jobs:
             exit 1
           fi
 
-          git fetch --tags origin
+          git fetch --force --tags origin
           git checkout "$release_tag"
 
           while IFS= read -r php_file; do
