@@ -12,7 +12,7 @@ if (!defined('IN_MYBB')) {
     die('Direct initialization of this file is not allowed.');
 }
 
-define('TAB_SUB_MENU_VERSION', '1.0.0');
+define('TAB_SUB_MENU_VERSION', '1.1.0');
 
 function tab_sub_menu_language($key, $fallback)
 {
@@ -39,7 +39,7 @@ function tab_sub_menu_info()
     return array(
         'name' => tab_sub_menu_language('tab_sub_menu_plugin_name', 'Tab Sub Menu'),
         'description' => tab_sub_menu_language('tab_sub_menu_plugin_description', 'Organizes forum categories into configurable tabs for easier navigation.'),
-        'website' => 'https://www.sickgaming.net',
+        'website' => 'https://github.com/sickprodigy/mybb_tab-sub-menu_plugin',
         'author' => 'SickProdigy',
         'authorsite' => 'https://www.sickgaming.net',
         'license' => 'GPL-3.0-or-later',
@@ -131,6 +131,15 @@ function tab_sub_menu_settings($gid)
             'description' => tab_sub_menu_language('tab_sub_menu_setting_hide_empty_description', 'Hide tabs whose configured categories are not present in the forum index rendered for the current visitor. Show-all tabs remain available.'),
             'optionscode' => 'yesno',
             'value' => '1',
+            'disporder' => 3,
+            'gid' => $gid
+        ),
+        array(
+            'name' => 'tab_sub_menu_selection_mode',
+            'title' => tab_sub_menu_language('tab_sub_menu_setting_selection_mode_title', 'Selection Mode'),
+            'description' => tab_sub_menu_language('tab_sub_menu_setting_selection_mode_description', 'Choose top-level categories only, or allow tabs to contain individual forums and categories.'),
+            'optionscode' => "select\ntop=" . tab_sub_menu_language('tab_sub_menu_setting_selection_mode_top', 'Top-level categories') . "\nall=" . tab_sub_menu_language('tab_sub_menu_setting_selection_mode_all', 'All forums and categories'),
+            'value' => 'top',
             'disporder' => 2,
             'gid' => $gid
         ),
@@ -140,7 +149,7 @@ function tab_sub_menu_settings($gid)
             'description' => tab_sub_menu_language('tab_sub_menu_setting_default_tab_description', 'Tab selected when no valid remembered selection is available. Only enabled configured tabs are offered.'),
             'optionscode' => tab_sub_menu_default_tab_optionscode(),
             'value' => 'home',
-            'disporder' => 3,
+            'disporder' => 4,
             'gid' => $gid
         ),
         array(
@@ -149,7 +158,7 @@ function tab_sub_menu_settings($gid)
             'description' => tab_sub_menu_language('tab_sub_menu_setting_remember_description', 'Remember each visitor\'s selected tab in installation-scoped browser storage.'),
             'optionscode' => 'yesno',
             'value' => '1',
-            'disporder' => 4,
+            'disporder' => 5,
             'gid' => $gid
         ),
         array(
@@ -158,7 +167,7 @@ function tab_sub_menu_settings($gid)
             'description' => tab_sub_menu_language('tab_sub_menu_setting_url_state_description', 'Store the active tab in the tsm_tab URL parameter so links are shareable and browser Back/Forward navigation follows tab changes.'),
             'optionscode' => 'yesno',
             'value' => '1',
-            'disporder' => 5,
+            'disporder' => 6,
             'gid' => $gid
         ),
         array(
@@ -167,7 +176,7 @@ function tab_sub_menu_settings($gid)
             'description' => tab_sub_menu_language('tab_sub_menu_setting_custom_css_description', 'Optional CSS added after the maintained plugin stylesheet. Useful selectors: #forum-tab-sub-menu, .tab-sub-menu li, .tab-sub-menu li.active, and .tab-sub-menu li:hover:not(.active).'),
             'optionscode' => 'textarea',
             'value' => '',
-            'disporder' => 6,
+            'disporder' => 7,
             'gid' => $gid
         )
     );
@@ -366,6 +375,16 @@ function tab_sub_menu_sync_template_variables()
         '#' . preg_quote('{$stylesheets}') . '#i',
         '{$stylesheets}{$tab_sub_menu_assets}'
     );
+    find_replace_templatesets(
+        'forumbit_depth2_forum',
+        '#\s+data-tab-sub-menu-forum=(?:"|&quot;)\{\$forum\[\'fid\'\]\}(?:"|&quot;)#i',
+        ''
+    );
+    find_replace_templatesets(
+        'forumbit_depth2_forum',
+        '#<tr\b#i',
+        '<tr data-tab-sub-menu-forum="{$forum[\'fid\']}"'
+    );
     return true;
 }
 
@@ -382,6 +401,11 @@ function tab_sub_menu_deactivate()
     find_replace_templatesets(
         'headerinclude',
         '#' . preg_quote('{$tab_sub_menu_assets}') . '#i',
+        ''
+    );
+    find_replace_templatesets(
+        'forumbit_depth2_forum',
+        '#\s+data-tab-sub-menu-forum=(?:"|&quot;)\{\$forum\[\'fid\'\]\}(?:"|&quot;)#i',
         ''
     );
 }
@@ -641,12 +665,7 @@ function tab_sub_menu_admin_settings_editor()
     $query = $db->simple_select("settinggroups", "gid", "name='tab_sub_menu'", array("limit" => 1));
     if ((int)$mybb->get_input("gid") !== (int)$db->fetch_field($query, "gid")) { return; }
 
-    $categories = array();
-    $query = $db->simple_select("forums", "fid, name", "type='c' AND pid='0'", array("order_by" => "disporder", "order_dir" => "ASC"));
-    while ($category = $db->fetch_array($query)) {
-        $categories[] = array("id" => (int)$category["fid"], "name" => (string)$category["name"]);
-    }
-    $json = json_encode($categories);
+    $json = json_encode(tab_sub_menu_admin_forum_tree());
     if ($json === false) { $json = "[]"; }
     $json = str_replace(array("<", ">", "&"), array("\u003C", "\u003E", "\u0026"), $json);
 
@@ -659,12 +678,49 @@ function tab_sub_menu_admin_settings_editor()
     $language_json = str_replace(array("<", ">", "&"), array("\u003C", "\u003E", "\u0026"), $language_json);
 
     $base = rtrim($mybb->asset_url, "/") . "/jscripts/tab-sub-menu/";
-    $page->extra_header .= "<script>window.tabSubMenuCategories = " . $json . ";</script>";
+    $page->extra_header .= "<script>window.tabSubMenuForumTree = " . $json . ";</script>";
     $page->extra_header .= "<script>window.tabSubMenuMaintainedCss = " . $stylesheet_json . ";</script>";
     $page->extra_header .= "<script>window.tabSubMenuLanguage = " . $language_json . ";</script>";
     $page->extra_header .= '<script type="text/javascript" src="' . htmlspecialchars_uni(
         $base . 'tab-sub-menu-admin-settings.js?ver=' . tab_sub_menu_asset_version()
     ) . '"></script>';
+}
+
+function tab_sub_menu_admin_forum_tree()
+{
+    global $db;
+
+    $children = array();
+    $query = $db->simple_select('forums', 'fid,pid,name,type,disporder', '', array('order_by' => 'disporder', 'order_dir' => 'ASC'));
+    while ($forum = $db->fetch_array($query)) {
+        $pid = (int)$forum['pid'];
+        if (!isset($children[$pid])) $children[$pid] = array();
+        $children[$pid][] = $forum;
+    }
+
+    $tree = array();
+    $append = function ($pid, $depth, $categoryId, $path) use (&$append, &$children, &$tree) {
+        if (empty($children[$pid]) || $depth > 20) return;
+        foreach ($children[$pid] as $forum) {
+            $id = (int)$forum['fid'];
+            $isCategory = $forum['type'] === 'c';
+            $ownerCategory = $isCategory && (int)$forum['pid'] === 0 ? $id : $categoryId;
+            $itemPath = array_merge($path, array((string)$forum['name']));
+            $tree[] = array(
+                'id' => $id,
+                'parentId' => (int)$forum['pid'],
+                'categoryId' => $ownerCategory,
+                'name' => (string)$forum['name'],
+                'path' => implode(' > ', $itemPath),
+                'type' => $isCategory ? 'category' : 'forum',
+                'depth' => $depth,
+                'topLevel' => $isCategory && (int)$forum['pid'] === 0
+            );
+            $append($id, $depth + 1, $ownerCategory, $itemPath);
+        }
+    };
+    $append(0, 0, 0, array());
+    return $tree;
 }
 
 function tab_sub_menu_admin_javascript_language()
@@ -688,6 +744,13 @@ function tab_sub_menu_admin_javascript_language()
         'usedBy' => array('tab_sub_menu_editor_used_by', 'used by {1}'),
         'missingMarker' => array('tab_sub_menu_editor_missing_marker', 'missing'),
         'categoryPrompt' => array('tab_sub_menu_editor_category_prompt', "Top-level categories:\n\n{1}\n\nEnter IDs to add:"),
+        'search' => array('tab_sub_menu_editor_search', 'Search forums and categories'),
+        'applySelection' => array('tab_sub_menu_editor_apply_selection', 'Apply selection'),
+        'cancel' => array('tab_sub_menu_editor_cancel', 'Cancel'),
+        'pickerTitle' => array('tab_sub_menu_editor_picker_title', 'Choose forums and categories'),
+        'showAllHelp' => array('tab_sub_menu_editor_show_all_help', 'Select nothing to show all forums.'),
+        'categoryType' => array('tab_sub_menu_editor_category_type', 'Category'),
+        'forumType' => array('tab_sub_menu_editor_forum_type', 'Forum'),
         'viewCss' => array('tab_sub_menu_editor_view_css', 'View maintained default CSS'),
         'cssWarning' => array('tab_sub_menu_editor_css_warning', 'Custom CSS loads after this maintained stylesheet. Copy only when you want a full editable starting point; copied rules can override future plugin style updates.'),
         'copyCss' => array('tab_sub_menu_editor_copy_css', 'Copy defaults to Custom Menu CSS'),
@@ -739,6 +802,7 @@ function tab_sub_menu_menu_output()
         || !empty($mybb->settings['tab_sub_menu_url_state'])
         ? 'true'
         : 'false';
+    $selection_mode_json = json_encode(isset($mybb->settings['tab_sub_menu_selection_mode']) && $mybb->settings['tab_sub_menu_selection_mode'] === 'all' ? 'all' : 'top');
     $board_url = isset($mybb->settings['bburl']) ? (string)$mybb->settings['bburl'] : '';
     $storage_key_json = json_encode(tab_sub_menu_storage_key($board_url));
     if ($storage_key_json === false) {
@@ -763,6 +827,7 @@ function tab_sub_menu_menu_output()
         . '; window.tabSubMenuDefaultTab = ' . $default_tab_json
         . '; window.tabSubMenuRememberSelection = ' . $remember_selection
         . '; window.tabSubMenuUrlState = ' . $url_state
+        . '; window.tabSubMenuSelectionMode = ' . $selection_mode_json
         . '; window.tabSubMenuStorageKey = ' . $storage_key_json . ';</script>'
         . '<script type="text/javascript" src="' . htmlspecialchars_uni($script_url) . '"></script>';
 

@@ -1,0 +1,24 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><script>
+window.tabSubMenuLanguage = { select:'Select', pickerTitle:'Choose forums and categories', search:'Search forums and categories', applySelection:'Apply selection', cancel:'Cancel', showAllHelp:'Select nothing to show all forums.', categoryType:'Category', forumType:'Forum', usedBy:'used by {1}', missing:'Missing: {1}', allAssigned:'All assigned.', categoriesUnavailable:'Unavailable', editorHelp:'Help', tabId:'Tab ID', tabIdExample:'gaming', displayName:'Display name', displayNameExample:'Gaming', forumIds:'Forum/Category IDs', forumIdsExample:'2,3', enabled:'Enabled', addTab:'Add tab', remove:'Remove', unnamedTab:'Unnamed' };
+window.tabSubMenuForumTree = [
+  {id:5,parentId:0,categoryId:5,name:'Community',path:'Community',type:'category',depth:0,topLevel:true},
+  {id:51,parentId:5,categoryId:5,name:'General',path:'Community > General',type:'forum',depth:1,topLevel:false},
+  {id:52,parentId:5,categoryId:5,name:'Support',path:'Community > Support',type:'forum',depth:1,topLevel:false}
+];
+for (var i = 1; i <= 60; i++) window.tabSubMenuForumTree.push({id:100+i,parentId:5,categoryId:5,name:'Archive '+i,path:'Community > Archive '+i,type:'forum',depth:1,topLevel:false});
+</script><script src="../Upload/jscripts/tab-sub-menu/tab-sub-menu-admin-settings.js"></script></head><body>
+<form><textarea id="setting_tab_sub_menu_groups">community|Community||1</textarea><select id="setting_tab_sub_menu_selection_mode"><option value="top">Top</option><option value="all" selected>All</option></select><select id="setting_tab_sub_menu_default_tab"></select></form>
+<pre id="result">PENDING</pre>
+<script>document.addEventListener('DOMContentLoaded', function () {
+  var pick = document.querySelector('.sm-pick'); if (!pick) return document.getElementById('result').textContent = 'FAIL:no-picker';
+  pick.click();
+  if (document.querySelectorAll('.sm-picker-item').length < 50) return document.getElementById('result').textContent = 'FAIL:large-tree';
+  var search = document.querySelector('.sm-picker-search'); search.value = 'Support'; search.dispatchEvent(new Event('input', {bubbles:true}));
+  var visible = Array.prototype.filter.call(document.querySelectorAll('.sm-picker-item'), function (item) { return !item.hidden; });
+  if (visible.length !== 1) return document.getElementById('result').textContent = 'FAIL:search';
+  visible[0].querySelector('input').checked = true;
+  document.querySelector('.sm-picker-apply').click();
+  var row = document.querySelector('.sm-row');
+  document.getElementById('result').textContent = row.querySelector('.sm-forums').value === '52' && row.querySelector('.sm-forum-field') ? 'PASS' : 'FAIL:apply';
+});</script></body></html>

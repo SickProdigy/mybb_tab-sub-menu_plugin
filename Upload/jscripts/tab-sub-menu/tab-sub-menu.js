@@ -41,9 +41,19 @@
           separators = next && next.tagName === 'BR' ? [next] : [];
         }
 
+        var forumRows = Object.create(null);
+        container.querySelectorAll('[data-tab-sub-menu-forum], tr[id^="forum_"]').forEach(function (row) {
+          var forumId = row.hasAttribute('data-tab-sub-menu-forum')
+            ? row.getAttribute('data-tab-sub-menu-forum')
+            : (String(row.id || '').match(/^forum_(\d+)$/) || [])[1];
+          forumId = parseInt(forumId, 10);
+          if (forumId && !forumRows[forumId] && row.style) forumRows[forumId] = { element: row, display: row.style.display };
+        });
+
         categories[categoryId] = {
           container: container,
           containerDisplay: container.style.display,
+          forumRows: forumRows,
           separators: Array.prototype.slice.call(separators).filter(function (separator) {
             return separator && separator.style;
           }).map(function (separator) {
@@ -65,19 +75,30 @@
     });
   }
 
-  function setCategoryVisibility(ids, categories) {
+  function setForumVisibility(forum, visible) {
+    forum.element.style.display = visible ? forum.display : 'none';
+  }
+
+  function setCategoryVisibility(ids, categories, selectionMode) {
     var categoryIds = Object.keys(categories);
     var showAll = ids.length === 0;
-    var hasMatch = showAll || ids.some(function (forumId) { return categories[forumId]; });
+    var allMode = selectionMode === 'all';
+    var hasMatch = showAll || ids.some(function (forumId) {
+      if (categories[forumId]) return true;
+      return allMode && categoryIds.some(function (categoryId) { return categories[categoryId].forumRows[forumId]; });
+    });
 
     // Unknown markup or a selection with no matching component must leave the index usable.
     if (!categoryIds.length || !hasMatch) return false;
 
     categoryIds.forEach(function (categoryId) {
-      setComponentVisibility(categories[categoryId], showAll);
-    });
-    ids.forEach(function (forumId) {
-      if (categories[forumId]) setComponentVisibility(categories[forumId], true);
+      var component = categories[categoryId];
+      var categorySelected = showAll || ids.indexOf(parseInt(categoryId, 10)) !== -1;
+      var selectedForums = Object.keys(component.forumRows).filter(function (forumId) { return ids.indexOf(parseInt(forumId, 10)) !== -1; });
+      setComponentVisibility(component, categorySelected || (allMode && selectedForums.length > 0));
+      Object.keys(component.forumRows).forEach(function (forumId) {
+        setForumVisibility(component.forumRows[forumId], categorySelected || !allMode || selectedForums.indexOf(forumId) !== -1);
+      });
     });
 
     return true;
@@ -104,6 +125,7 @@
     }
 
     var hideEmptyTabs = window.tabSubMenuHideEmptyTabs === true;
+    var selectionMode = window.tabSubMenuSelectionMode === 'all' ? 'all' : 'top';
     var storageKey = typeof window.tabSubMenuStorageKey === 'string'
       ? window.tabSubMenuStorageKey
       : 'tabSubMenuTab:/';
@@ -119,7 +141,10 @@
 
       var tabIds = categoryGroups[tab.getAttribute('data-tab')] || [];
       var available = tabIds.length === 0 || tabIds.some(function (forumId) {
-        return Boolean(categoryComponents[forumId]);
+        if (categoryComponents[forumId]) return true;
+        return selectionMode === 'all' && Object.keys(categoryComponents).some(function (categoryId) {
+          return Boolean(categoryComponents[categoryId].forumRows[forumId]);
+        });
       });
 
       if (!available) {
@@ -153,7 +178,7 @@
         try { window.localStorage.setItem(storageKey, selectedKey); } catch (error) {}
       }
 
-      if (categoryGroups) setCategoryVisibility(categoryGroups[selectedKey] || [], categoryComponents);
+      if (categoryGroups) setCategoryVisibility(categoryGroups[selectedKey] || [], categoryComponents, selectionMode);
       if (updateHistory) writeUrlSelection(selectedKey, false);
     }
 

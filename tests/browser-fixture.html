@@ -1,0 +1,21 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><script>
+window.tabSubMenuGroups = { one: [11], all: [] };
+window.tabSubMenuSelectionMode = 'all';
+window.tabSubMenuHideEmptyTabs = true;
+window.tabSubMenuRememberSelection = false;
+window.tabSubMenuUrlState = false;
+</script><script src="../Upload/jscripts/tab-sub-menu/tab-sub-menu.js"></script></head><body>
+<ul class="tab-sub-menu" role="tablist"><li><button role="tab" data-tab="one">One</button></li><li><button role="tab" data-tab="all">All</button></li></ul>
+<table id="category-1"><tbody id="cat_1_e"><tr><td>Heading</td></tr><tr data-tab-sub-menu-forum="11"><td>Forum 11</td></tr><tr data-tab-sub-menu-forum="12"><td>Forum 12</td></tr></tbody></table><br>
+<table id="category-2"><tbody id="cat_2_e"><tr><td>Heading</td></tr><tr data-tab-sub-menu-forum="21"><td>Forum 21</td></tr></tbody></table>
+<pre id="result">PENDING</pre>
+<script>document.addEventListener('DOMContentLoaded', function () {
+  var first = document.querySelector('[data-tab-sub-menu-forum="11"]').style.display !== 'none'
+    && document.querySelector('[data-tab-sub-menu-forum="12"]').style.display === 'none'
+    && document.getElementById('category-2').style.display === 'none';
+  document.querySelector('[data-tab="all"]').click();
+  var restored = document.querySelector('[data-tab-sub-menu-forum="12"]').style.display !== 'none'
+    && document.getElementById('category-2').style.display !== 'none';
+  document.getElementById('result').textContent = first && restored ? 'PASS' : 'FAIL';
+});</script></body></html>

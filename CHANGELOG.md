@@ -2,6 +2,24 @@
 
 All notable changes to Tab Sub Menu are documented here.
 
+## [1.1.0] - 2026-09-17
+
+### Added
+
+- Searchable hierarchical forum/category picker for large boards.
+- Configurable top-level-category and mixed forum/category selection modes.
+- Individual-forum filtering that preserves the parent category wrapper and hides unselected sibling rows.
+- Duplicate-assignment context in the picker and custom-theme forum-row markers.
+
+### Changed
+
+- Kept Admin CP editor controls aligned by placing the picker beside the ID field.
+- Standardized the plugin website metadata on the public GitHub mirror.
+
+### Breaking changes
+
+- None. Existing installations retain top-level-category mode on upgrade.
+
 ## [1.0.0] - 2026-08-30
 
 ### Added

@@ -10,7 +10,8 @@ A responsive tab menu for organizing MyBB 1.8 forum categories into configurable
 
 ## Features
 
-- Configurable category groups, labels, default tab, and show-all tabs.
+- Configurable category/forum groups, labels, default tab, and show-all tabs.
+- Searchable hierarchical Admin CP picker with category-only and mixed forum modes.
 - Optional remembered selections and shareable `tsm_tab` URLs.
 - Permission-aware empty-tab hiding with safe fallbacks.
 - Responsive styling, keyboard navigation, and accessible tab markup.
@@ -38,10 +39,12 @@ Each row contains:
 
 - A unique internal Tab ID, such as `gaming`.
 - The display name visitors see.
-- Comma-separated top-level Forum/Category IDs.
+- Forum/Category selections made through the searchable hierarchy (manual IDs remain editable).
 - An Enabled checkbox.
 
 Leave the ID list empty to create a show-all tab. Additional settings control empty-tab hiding, the default tab, browser persistence, shareable URLs, and custom CSS.
+
+Use **Top-level categories** mode to preserve category-wide filtering. Use **All forums and categories** mode to select individual forums, whole categories, or a mixture. Selecting one forum keeps its category heading visible while hiding unselected sibling forum rows. The picker marks IDs assigned to other tabs and supports filtering large forum trees by name or ID.
 
 Selections resolve in this order: a valid URL tab, a remembered tab, the configured default, then the first available tab. Invalid, inaccessible, or deleted categories fail safely without hiding the complete forum index.
 
@@ -63,6 +66,12 @@ Heavily customized themes may use different forum-category markup. If tabs do no
 
 ```html
 <section data-tab-sub-menu-category="{$forum['fid']}">...</section>
+```
+
+For individual-forum mode, mark each rendered forum row as well:
+
+```html
+<div data-tab-sub-menu-forum="{$forum['fid']}">...</div>
 ```
 
 If the plugin cannot recognize a theme's category markup, it leaves the complete forum index visible rather than hiding content.
