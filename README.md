@@ -78,7 +78,7 @@ If the plugin cannot recognize a theme's category markup, it leaves the complete
 
 ## Compatibility
 
-Supports MyBB 1.8.x, PHP 7.4–8.4, and current or previous major versions of Chrome, Firefox, Edge, and Safari. With JavaScript or browser storage unavailable, the complete forum index remains usable.
+Supports MyBB 1.8.x, PHP 7.4–8.4, and current or previous major versions of Chrome, Firefox, Edge, and Safari. Remembered tab selections expire after 24 hours, returning visitors to the configured default tab. With JavaScript or browser storage unavailable, the complete forum index remains usable.
 
 ## Uninstalling
 

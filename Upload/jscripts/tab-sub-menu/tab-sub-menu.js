@@ -129,6 +129,8 @@
     var storageKey = typeof window.tabSubMenuStorageKey === 'string'
       ? window.tabSubMenuStorageKey
       : 'tabSubMenuTab:/';
+    var storageTimestampKey = storageKey + ':savedAt';
+    var selectionMaxAge = 24 * 60 * 60 * 1000;
     var legacyStorageKey = 'tabSubMenuTab';
     var defaultTabKey = typeof window.tabSubMenuDefaultTab === 'string'
       ? window.tabSubMenuDefaultTab
@@ -165,6 +167,35 @@
       return;
     }
 
+    function forgetSelection() {
+      window.localStorage.removeItem(storageKey);
+      window.localStorage.removeItem(storageTimestampKey);
+    }
+
+    function rememberTab(tabKey) {
+      window.localStorage.setItem(storageKey, tabKey);
+      window.localStorage.setItem(storageTimestampKey, String(Date.now()));
+    }
+
+    function readRememberedSelection() {
+      var selection = window.localStorage.getItem(storageKey);
+      if (selection === null) return null;
+
+      var savedAt = parseInt(window.localStorage.getItem(storageTimestampKey), 10);
+      if (!savedAt) {
+        // Preserve pre-1.1.1 selections for one normal retention window.
+        window.localStorage.setItem(storageTimestampKey, String(Date.now()));
+        return selection;
+      }
+
+      if (Date.now() - savedAt >= selectionMaxAge) {
+        forgetSelection();
+        return null;
+      }
+
+      return selection;
+    }
+
     function activate(tab, remember, updateHistory) {
       allTabs.forEach(function (candidate) {
         var selected = candidate === tab;
@@ -175,7 +206,7 @@
 
       var selectedKey = tab.getAttribute('data-tab');
       if (remember && rememberSelection) {
-        try { window.localStorage.setItem(storageKey, selectedKey); } catch (error) {}
+        try { rememberTab(selectedKey); } catch (error) {}
       }
 
       if (categoryGroups) setCategoryVisibility(categoryGroups[selectedKey] || [], categoryComponents, selectionMode);
@@ -233,20 +264,20 @@
     var initialTab = findAvailableTab(readUrlSelection());
     try {
       if (!rememberSelection) {
-        window.localStorage.removeItem(storageKey);
+        forgetSelection();
       }
 
       if (rememberSelection && !initialTab) {
-        var scopedSelection = window.localStorage.getItem(storageKey);
+        var scopedSelection = readRememberedSelection();
         initialTab = findAvailableTab(scopedSelection);
-        if (scopedSelection !== null && !initialTab) window.localStorage.removeItem(storageKey);
+        if (scopedSelection !== null && !initialTab) forgetSelection();
 
         if (!initialTab) {
           var legacySelection = window.localStorage.getItem(legacyStorageKey);
           initialTab = findAvailableTab(legacySelection);
 
           if (legacySelection !== null) {
-            if (initialTab) window.localStorage.setItem(storageKey, legacySelection);
+            if (initialTab) rememberTab(legacySelection);
             window.localStorage.removeItem(legacyStorageKey);
           }
         }

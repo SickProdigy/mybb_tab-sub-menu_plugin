@@ -2,6 +2,17 @@
 
 All notable changes to Tab Sub Menu are documented here.
 
+## [1.1.1] - 2026-09-17
+
+### Changed
+
+- Remembered tab selections now expire after 24 hours and fall back to the configured default tab.
+- Existing stored selections receive a fresh retention window when first read after upgrading.
+
+### Breaking changes
+
+- None.
+
 ## [1.1.0] - 2026-09-17
 
 ### Added
