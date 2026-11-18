@@ -14,7 +14,7 @@ require_once __DIR__ . '/../Upload/inc/plugins/tab_sub_menu.php';
 
 function fail_test($message) { fwrite(STDERR, "FAIL {$message}.\n"); exit(1); }
 
-if (TAB_SUB_MENU_VERSION !== '1.1.0') fail_test('plugin version mismatch');
+if (TAB_SUB_MENU_VERSION !== '1.1.2') fail_test('plugin version mismatch');
 $info = tab_sub_menu_info();
 if ($info['website'] !== 'https://github.com/sickprodigy/mybb_tab-sub-menu_plugin' || $info['authorsite'] !== 'https://www.sickgaming.net') fail_test('plugin metadata links');
 $groups = tab_sub_menu_parse_menu_groups("games|Games|2,7|1\ndisabled|Hidden|9|0\nall|Everything||1");
@@ -31,4 +31,4 @@ foreach (array('data-tab-sub-menu-forum', 'forumRows', 'selectionMode', 'setForu
 $pluginSource = file_get_contents(__DIR__ . '/../Upload/inc/plugins/tab_sub_menu.php');
 if (substr_count($pluginSource, "'forumbit_depth2_forum'") < 3 || strpos($pluginSource, '<tr data-tab-sub-menu-forum=') === false) fail_test('stock MyBB forum-row template synchronization');
 
-echo "PASS Tab Sub Menu 1.1.0 checks.\n";
+echo "PASS Tab Sub Menu checks.\n";

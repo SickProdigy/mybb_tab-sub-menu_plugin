@@ -12,7 +12,7 @@ if (!defined('IN_MYBB')) {
     die('Direct initialization of this file is not allowed.');
 }
 
-define('TAB_SUB_MENU_VERSION', '1.1.1');
+define('TAB_SUB_MENU_VERSION', '1.1.2');
 
 function tab_sub_menu_language($key, $fallback)
 {
@@ -763,6 +763,28 @@ function tab_sub_menu_admin_javascript_language()
     }
 
     return $strings;
+}
+
+// MyBB can be required inside a function, while hook output lives in globals.
+$plugins->add_hook('global_intermediate', 'tab_sub_menu_prepare_template_scope');
+function tab_sub_menu_prepare_template_scope()
+{
+    global $templates;
+
+    foreach (array('tab_sub_menu_assets', 'tab_sub_menu') as $name) {
+        if (!isset($GLOBALS[$name])) {
+            $GLOBALS[$name] = '';
+        }
+        foreach (array('headerinclude', 'index') as $template) {
+            if (isset($templates->cache[$template])) {
+                $templates->cache[$template] = str_replace(
+                    '{$' . $name . '}',
+                    '{$GLOBALS[\'' . $name . '\']}',
+                    $templates->cache[$template]
+                );
+            }
+        }
+    }
 }
 
 $plugins->add_hook('global_start', 'tab_sub_menu_menu_output');

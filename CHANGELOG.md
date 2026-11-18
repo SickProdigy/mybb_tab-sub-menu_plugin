@@ -2,6 +2,10 @@
 
 All notable changes to Tab Sub Menu are documented here.
 
+## 1.1.2 - 2026-11-18
+
+- Resolve plugin template output through globals when MyBB is included inside a function, preventing undefined-variable warnings (#21).
+
 ## [1.1.1] - 2026-09-17
 
 ### Changed
