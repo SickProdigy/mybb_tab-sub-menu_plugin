@@ -14,7 +14,7 @@ require_once __DIR__ . '/../Upload/inc/plugins/tab_sub_menu.php';
 
 function fail_test($message) { fwrite(STDERR, "FAIL {$message}.\n"); exit(1); }
 
-if (TAB_SUB_MENU_VERSION !== '1.1.2') fail_test('plugin version mismatch');
+if (TAB_SUB_MENU_VERSION !== '1.1.3') fail_test('plugin version mismatch');
 $info = tab_sub_menu_info();
 if ($info['website'] !== 'https://github.com/sickprodigy/mybb_tab-sub-menu_plugin' || $info['authorsite'] !== 'https://www.sickgaming.net') fail_test('plugin metadata links');
 $groups = tab_sub_menu_parse_menu_groups("games|Games|2,7|1\ndisabled|Hidden|9|0\nall|Everything||1");

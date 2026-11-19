@@ -2,3 +2,4 @@
 
 - MyBB may be bootstrapped by a scoped `require`. Hook output uses globals, but core template evaluation can run in the caller scope. Keep plugin output references scope-safe through the `global_intermediate` cached-template preparation, after core template caching and before header evaluation.
 - Run `php tests/template_scope_test.php` when changing template output integration.
+- Release changelog headings must use `## [X.Y.Z]`; the GitHub validation workflow checks this exact format before packaging.
